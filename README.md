@@ -3,7 +3,7 @@
 
 It's a lightweight client-side AJAX framework which requires no server-side support.  In fact, the case it's optimized for is when the server provides plain static HTML.  It's also super easy to use: you only call one method.
 
-How it's designed to work was inspired by ASP.Net's UpdatePanel control, but as implemented, it's even more similar to jQuery's `load()` method, at much lower cost (and as a tradeoff, less support for downlevel browsers).
+How it's designed to work was inspired by ASP.Net's `UpdatePanel` control, but as implemented, it's even more similar to jQuery's `load()` method, at much lower cost (and as a tradeoff, less support for downlevel browsers).
 
 To use it, you give it the ID of any element on your page (which we will call the target), the URL of a new page, and an ID on that page.  It replaces the contents of the local document's target element with the content of the named element on the new page.  SPARE is most seamlessly used when you have a site design where many pages share common markup for headers, navigation, and so on, and the real differences are in a bounded content area.  SPARE lets you load new content into that area without refreshing the rest of the page.  In this use case, often the two IDs will be the same.
 
@@ -11,7 +11,7 @@ You can just as easily select content from pages not resembling the calling page
 
 --------
 
-The Javascript API consists of an object named SPARE with two public methods.  Note that you do not use a new operator to instantiate SPARE; there's just the one static object.  The main method you’ll use is **`SPARE.replaceContent`**, which takes the following arguments, all of string type unless stated otherwise:
+The Javascript API consists of an object named **`SPARE`** with two public methods.  Note that you do not use a new operator to instantiate SPARE; there's just the one static object.  The main method you’ll use is **`SPARE.replaceContent`**, which takes the following arguments, all of string type unless stated otherwise:
 
 > **`elementID`** (required): the DOM ID of the target element in your document, which will have its contents replaced.  If the ID is not found in your document, SPARE throws an immediate exception.
 
@@ -32,7 +32,7 @@ The Javascript API consists of an object named SPARE with two public methods.  N
 
 > **`transitionalContentID`**: the DOM ID of an element in your document (normally one which is hidden from view) which contains some sort of placeholder content to be displayed while waiting for the new material to download.  That element's content is copied into the target element before the download starts, and is replaced in turn when it completes.  If left undefined, the default behavior is to leave the original content in place while downloading.  You can set a default value globally by assigning the ID string to the global variable **`SPARE.transitionalContentID`**.
 
-> **`timeout`**: a number.  If the new data doesn't download within this many seconds, the operation fails.  The default value is 30, and the supported range is from 1 to 3600.  You can set a different default globally by putting a number in the global variable **`SPARE.timeout`**.  If the time expires, `onFailure` will be called with error code 408 (Request Timeout), with the error message being "SPARE time limit exceeded" instead of "Request Timeout".  (All internal messages to `onFailure` start with the word "SPARE".)
+> **`timeout`**: a number.  If the new data doesn't download within this many seconds, the operation fails.  The supported range is from 1 to 3600, and the default is to leave it up to the browser.  You can set a different default globally by putting a number in the global variable **`SPARE.timeout`**.  If the time expires, `onFailure` will be called with error code 408 (Request Timeout), with the error message being "SPARE time limit exceeded" instead of "Request Timeout".  (All internal messages to `onFailure` start with the word "SPARE".)
 
 --------
 
