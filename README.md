@@ -30,21 +30,25 @@ The Javascript API consists of an object named SPARE with two public methods.  N
 
 > **`onSuccessFailureData`**: an arbitrary object which is passed as the first argument to whichever of `onSuccess` or `onFailure` is invoked, so you can give them some context.
 
-> **`transitionalContentID`**: the DOM ID of an element in your document (normally one which is hidden from view) which contains some sort of placeholder content to be displayed while waiting for the new material to download.  That element's content is copied into the target element before the download starts, and is replaced in turn when it completes.  If left undefined, the default behavior is to leave the original content in place while downloading.  You can set a default value globally by assigning the ID string to the global variable SPARE.transitionalContentID.
+> **`transitionalContentID`**: the DOM ID of an element in your document (normally one which is hidden from view) which contains some sort of placeholder content to be displayed while waiting for the new material to download.  That element's content is copied into the target element before the download starts, and is replaced in turn when it completes.  If left undefined, the default behavior is to leave the original content in place while downloading.  You can set a default value globally by assigning the ID string to the global variable **`SPARE.transitionalContentID`**.
 
-> **`timeout`**: a number.  If the new data doesn't download within this many seconds, the operation fails.  The default value is 30, and the supported range is from 1 to 3600.  You can set a different default globally by putting a number in the global variable SPARE.timeout.
+> **`timeout`**: a number.  If the new data doesn't download within this many seconds, the operation fails.  The default value is 30, and the supported range is from 1 to 3600.  You can set a different default globally by putting a number in the global variable **`SPARE.timeout`**.
 
 --------
 
-The second public method is SPARE.supportLevel, which takes no arguments.  It returns a number indicating how well SPARE expects to work in the current browser environment.  It’s a good practice to check this before invoking replaceElement, and fall back to a non-AJAX approach if the value it returns is too low.  The values it can return are:
+The second public method is **`SPARE.supportLevel`**, which takes no arguments.  It returns a number indicating how well SPARE expects to work in the current browser environment.  It’s a good practice to check this before invoking `replaceElement`, and fall back to a non-AJAX approach if the value it returns is too low.  The values it can return are:
 
-0:  This browser has insufficient support and SPARE will not operate at all.
+> **0**:  This browser has insufficient support and SPARE will not operate at all.
 
-1:  This browser has very limited support, and SPARE will only be able to download page fragments.  In other words, you cannot use the newElementID parameter.
+> **1**:  This browser has very limited support, and SPARE will only be able to download page fragments.  In other words, you cannot use the `newElementID` parameter.
 
-2:  This browser has enough support that all features of SPARE should function.
+> **2**:  This browser has enough support that all features of SPARE should function.
 
-3:  This browser supports the latest standards and SPARE will function at its best.
+> **3**:  This browser supports the latest standards and SPARE will function at its best.
 
-IMPORTANT:  It is easier than you think to get into a state where your supportLevel value is 1, and AJAX with newElementID doesn’t work.  This doesn’t just happen if your user is running something ancient like IE 7 — it will happen even in IE 10 if your page provokes IE into Compatibility View mode!  Make sure your markup is up to snuff so IE uses Standards mode.  If you want AJAX on funky pages with markup for archaic browsers, use jQuery.
+**IMPORTANT**:  It is easier than you think to get into a state where your `supportLevel` value is 1, and AJAX with `newElementID` doesn’t work.  This doesn’t just happen if your user is running something ancient like IE 7 — it will happen even in IE 10 if your page provokes IE into Compatibility View mode!  *Make sure your markup is up to snuff so IE uses Standards mode.*  If you want AJAX on funky pages with markup for archaic browsers, use jQuery.
+
+--------
+
+
 
