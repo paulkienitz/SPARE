@@ -32,7 +32,7 @@ The Javascript API consists of an object named SPARE with two public methods.  N
 
 > **`transitionalContentID`**: the DOM ID of an element in your document (normally one which is hidden from view) which contains some sort of placeholder content to be displayed while waiting for the new material to download.  That element's content is copied into the target element before the download starts, and is replaced in turn when it completes.  If left undefined, the default behavior is to leave the original content in place while downloading.  You can set a default value globally by assigning the ID string to the global variable **`SPARE.transitionalContentID`**.
 
-> **`timeout`**: a number.  If the new data doesn't download within this many seconds, the operation fails.  The default value is 30, and the supported range is from 1 to 3600.  You can set a different default globally by putting a number in the global variable **`SPARE.timeout`**.
+> **`timeout`**: a number.  If the new data doesn't download within this many seconds, the operation fails.  The default value is 30, and the supported range is from 1 to 3600.  You can set a different default globally by putting a number in the global variable **`SPARE.timeout`**.  If the time expires, `onFailure` will be called with error code 408 (Request Timeout), with the error message being "SPARE time limit exceeded" instead of "Request Timeout".  (All internal messages to `onFailure` start with the word "SPARE".)
 
 --------
 
