@@ -11,25 +11,28 @@ You can just as easily select content from pages not resembling the calling page
 
 --------
 
-The Javascript API consists of an object named SPARE with two public methods.  Note that you do not use a new operator to instantiate SPARE; there's just the one static object.  The main method you’ll use is SPARE.replaceElement, which takes the following arguments, all of string type unless stated otherwise:
+The Javascript API consists of an object named SPARE with two public methods.  Note that you do not use a new operator to instantiate SPARE; there's just the one static object.  The main method you’ll use is **`SPARE.replaceElement`**, which takes the following arguments, all of string type unless stated otherwise:
 
-> `elementID` (required): the DOM ID of the target element in your document, which will have its contents replaced.  If the ID is not found in your document, SPARE throws an immediate exception.
+> **`elementID`** (required): the DOM ID of the target element in your document, which will have its contents replaced.  If the ID is not found in your document, SPARE throws an immediate exception.
 
-> `pageURL` (required): the web address of the HTML content to be used for that replacement.  This can be a relative URL for content on the same site as the current page.  (Cross-domain URLs are commonly blocked by browser security anyway.)
+> **`pageURL`** (required): the web address of the HTML content to be used for that replacement.  This can be a relative URL for content on the same site as the current page.  (Cross-domain URLs are commonly blocked by browser security anyway.)
 
-> `newElementID`:  the DOM ID of the element within the downloaded page which will be the source of the replacement content.  If you don't provide any value, then it puts the entire content returned by the URL into your target element.  This is only appropriate if the server is set up to return fragmentary pages, instead of complete ones with <html> tags.  If a complete page is received, it will use the content of the `<body>` tag.
+> **`newElementID`**:  the DOM ID of the element within the downloaded page which will be the source of the replacement content.  If you don't provide any value, then it puts the entire content returned by the URL into your target element.  This is only appropriate if the server is set up to return fragmentary pages, instead of complete ones with `<html>` tags.  If a complete page is received, it will use the content of the `<body>` tag.
 
-> `postData`: values to be sent to the URL as form arguments, which must be already formatted suitably.  If null or undefined, it requests the page with a simple GET.  Note: at present SPARE supports only form-urlencoded data, not multipart posts, so you can’t do file uploads.
+> **`postData`**: values to be sent to the URL as form arguments, which must be already formatted suitably.  If null or undefined, it requests the page with a simple GET; to do a POST with no arguments, pass `""`.  Note: at present SPARE supports only form-urlencoded data, not multipart posts, so you can’t do file uploads.
 
-> `onSuccess`: a function to be invoked after the new content is successfully loaded.  If you pass a string, it will be executed with eval().  If it's a function object, it will be passed the onSuccessFailureData value described below.  If defaulted, no action is taken aside from updating the content of your target element.
+> **`onSuccess`**: a function to be invoked after the new content is successfully loaded.  If you pass a string, it will be executed with `eval()`.  If it's a function object, it will be passed the `onSuccessFailureData` value described below.  If defaulted, no action is taken aside from updating the content of your target element.
 
-> `onFailure`: similar, but invoked if there's a failure in loading the new content.  The second argument passed to it is an HTTP result number, such as 404 for page not found, and the third is the text of the error message received.  The error number may also be negative, if SPARE fails to use the content after a successful download.  -1 means that newElementID was not found, and -2 means an unexpected error in processing the content.  If the onFailure argument is not given, the default failure behavior is to navigate the browser window to the URL passed in.  This is an appropriate fallback if you're just using AJAX to smooth transitions of content.  This default behavior will not be useful if the server is returning only fragmentary pages.
+> **`onFailure`**: similar, but invoked if there's a failure in loading the new content.  The second argument passed to it is an HTTP result number, such as 404 for page not found, and the third is the text of the error message received.  If the onFailure argument is not given, the default failure behavior is to navigate the browser window to the URL passed in.  This is an appropriate fallback if you're just using AJAX to smooth transitions of content.  This default behavior will not be useful if the server is returning only fragmentary pages.  The error number may also be negative, if SPARE fails to use the content after a successful download:
+>> -1 means that newElementID was not found in the downloaded content  
+>> -2 means the content could not be parsed as HTML  
+>> -3 means an unexpected exception was caught in processing the content.
 
-> `onSuccessFailureData`: an arbitrary object which is passed as the first argument to whichever of onSuccess or onFailure is invoked, so you can give them some context.
+> **`onSuccessFailureData`**: an arbitrary object which is passed as the first argument to whichever of `onSuccess` or `onFailure` is invoked, so you can give them some context.
 
-> `transitionalContentID`: the DOM ID of an element in your document (normally one which is hidden from view) which contains some sort of placeholder content to be displayed while waiting for the new material to download.  That element's content is copied into the target element before the download starts, and is replaced in turn when it completes.  If left undefined, the default behavior is to leave the original content in place while downloading.  You can set a default value globally by assigning the ID string to the global variable SPARE.transitionalContentID.
+> **`transitionalContentID`**: the DOM ID of an element in your document (normally one which is hidden from view) which contains some sort of placeholder content to be displayed while waiting for the new material to download.  That element's content is copied into the target element before the download starts, and is replaced in turn when it completes.  If left undefined, the default behavior is to leave the original content in place while downloading.  You can set a default value globally by assigning the ID string to the global variable SPARE.transitionalContentID.
 
-> `timeout`: a number.  If the new data doesn't download within this many seconds, the operation fails.  The default value is 30, and the supported range is from 1 to 3600.  You can set a different default globally by putting a number in the global variable SPARE.timeout.
+> **`timeout`**: a number.  If the new data doesn't download within this many seconds, the operation fails.  The default value is 30, and the supported range is from 1 to 3600.  You can set a different default globally by putting a number in the global variable SPARE.timeout.
 
 --------
 
