@@ -11,7 +11,7 @@ You can just as easily select content from pages not resembling the calling page
 
 --------
 
-The Javascript API consists of an object named SPARE with two public methods.  Note that you do not use a new operator to instantiate SPARE; there's just the one static object.  The main method you’ll use is **`SPARE.replaceElement`**, which takes the following arguments, all of string type unless stated otherwise:
+The Javascript API consists of an object named SPARE with two public methods.  Note that you do not use a new operator to instantiate SPARE; there's just the one static object.  The main method you’ll use is **`SPARE.replaceContent`**, which takes the following arguments, all of string type unless stated otherwise:
 
 > **`elementID`** (required): the DOM ID of the target element in your document, which will have its contents replaced.  If the ID is not found in your document, SPARE throws an immediate exception.
 
@@ -36,7 +36,7 @@ The Javascript API consists of an object named SPARE with two public methods.  N
 
 --------
 
-The second public method is **`SPARE.supportLevel`**, which takes no arguments.  It returns a number indicating how well SPARE expects to work in the current browser environment.  It’s a good practice to check this before invoking `replaceElement`, and fall back to a non-AJAX approach if the value it returns is too low.  The values it can return are:
+The second public method is **`SPARE.supportLevel`**, which takes no arguments.  It returns a number indicating how well SPARE expects to work in the current browser environment.  It’s a good practice to check this before invoking `replaceContent`, and fall back to a non-AJAX approach if the value it returns is too low.  The values it can return are:
 
 > **0**:  This browser has insufficient support and SPARE will not operate at all.
 
@@ -46,9 +46,6 @@ The second public method is **`SPARE.supportLevel`**, which takes no arguments. 
 
 > **3**:  This browser supports the latest standards and SPARE will function at its best.
 
-**IMPORTANT**:  It is easier than you think to get into a state where your `supportLevel` value is 1, and AJAX with `newElementID` doesn’t work.  This doesn’t just happen if your user is running something ancient like IE 7 — it will happen even in IE 10 if your page provokes IE into Compatibility View mode!  *Make sure your markup is up to snuff so IE uses Standards mode.*  If you want AJAX on funky pages with markup for archaic browsers, use jQuery.
-
---------
-
+**IMPORTANT**:  It is easier than you think to get into a state where your `supportLevel` value is 1, and AJAX with `newElementID` doesn’t work.  This doesn’t just happen if your user is running something ancient like IE 7 — it will happen even in IE 10 if your page provokes IE into Compatibility View mode!  **Make sure your markup is up to snuff so IE uses Standards mode.**  If you want AJAX on funky pages with markup for archaic browsers, use jQuery.
 
 
