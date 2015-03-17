@@ -1,7 +1,9 @@
 # SPARE
 ### Static Page AJAX to Replace Elements -- a lightweight client-side library
 
-It's a lightweight client-side AJAX framework which requires no server-side support.  In fact, the case it's optimized for is when the server provides plain static HTML.  It's also super easy to use: you only call one method.
+ * * * Code to be uploaded soon -- still testing it * * *
+
+It's a small client-side AJAX framework which requires no server-side support.  In fact, the case it's optimized for is when the server provides only plain static HTML pages.  It's also super easy to use: you only call one method.
 
 How it's designed to work was inspired by ASP.Net's `UpdatePanel` control, but as implemented, it's even more similar to jQuery's `load()` method, at much lower cost (and as a tradeoff, less support for downlevel browsers).
 
@@ -47,5 +49,3 @@ The second public method is **`SPARE.supportLevel`**, which takes no arguments. 
 > **3**:  This browser supports the latest standards and SPARE will function at its best.
 
 **IMPORTANT**:  It is easier than you think to get into a state where your `supportLevel` value is 1, and AJAX with `newElementID` doesn’t work.  This doesn’t just happen if your user is running something ancient like IE 7 — it will happen even in IE 10 if your page provokes IE into Compatibility View mode!  **Make sure your markup is up to snuff so IE uses Standards mode.**  If you want AJAX on funky pages with markup for archaic browsers, use jQuery.
-
-
