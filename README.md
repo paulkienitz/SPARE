@@ -28,8 +28,8 @@ The Javascript API consists of an object named **`SPARE`** with two public metho
 > **`onFailure`**: similar, but invoked if there's a failure in loading the new content.  The second argument passed to it is an HTTP result number, such as 404 for page not found, and the third is the text of the error message received.  If the onFailure argument is not given, the default failure behavior is to navigate the browser window to the URL passed in.  This is an appropriate fallback if you're just using AJAX to smooth transitions of content.  This default behavior will not be useful if the server is returning only fragmentary pages.  The error number may also be negative, if SPARE fails to use the content after a successful download:
 >> -1 means that newElementID was not found in the downloaded content  
 >> -2 means the content could not be parsed as HTML  
->> -3 means an unexpected exception was caught in processing the content.
->> 0 can happen, with a null text.  Requests do sometimes fail with no explanation available.  This can happen, for instance, when making a forbidden cross-site request.
+>> -3 means an unexpected exception was caught in processing the content.  
+> And it's possible to get a code of 0 and a null text.  Requests do sometimes fail with no explanation available.  This can happen, for instance, when making a forbidden cross-site request.
 
 > **`onSuccessFailureData`**: an arbitrary object which is passed as the first argument to whichever of `onSuccess` or `onFailure` is invoked, so you can give them some context.
 
