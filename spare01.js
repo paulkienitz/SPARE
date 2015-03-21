@@ -267,7 +267,7 @@ var SPARE = function ()
 
                     var extractor = new ResultExtractor(newElementID, victim);
                     var tranny = new Transaction(pageURL, postData, timeout, extractor,
-                                                 onSuccess, onFailure, callbackContextData);
+                                                 callbackContextData, onSuccess, onFailure);
                     if (transitionalContentID)
                     {
                         var tron = document.getElementById(transitionalContentID);
