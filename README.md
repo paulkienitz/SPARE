@@ -1,7 +1,7 @@
 # SPARE
 ### Static Page AJAX to Replace Elements -- a lightweight client-side library
 
- * * * Code to be uploaded soon -- still testing it * * *
+=> NOTE: initial testing is not yet complete.  Not currently recommended for use.
 
 It's a small client-side AJAX framework which requires no server-side support.  In fact, the case it's optimized for is when the server provides only plain static HTML pages.  It's also super easy to use: you only call one method.
 
