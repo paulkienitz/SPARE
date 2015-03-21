@@ -29,6 +29,7 @@ The Javascript API consists of an object named **`SPARE`** with two public metho
 >> -1 means that newElementID was not found in the downloaded content  
 >> -2 means the content could not be parsed as HTML  
 >> -3 means an unexpected exception was caught in processing the content.
+> Finally, it's possible to get an error number of 0 and a null text.  Requests do sometimes fail with no exception and no explanatory text.  This can happen, for instance, when making a forbidden cross-site request.
 
 > **`onSuccessFailureData`**: an arbitrary object which is passed as the first argument to whichever of `onSuccess` or `onFailure` is invoked, so you can give them some context.
 
