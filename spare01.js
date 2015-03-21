@@ -2,11 +2,8 @@
 // for Replacing Elements.  By Paul Kienitz, distributable under Attribution
 // Share-Alike terms, per http://creativecommons.org/licenses/by-sa/4.0/
 
-// TODO: move callback context param before hooks, give both hooks a global default
-//       test timeout (PHP sleep?)
+// TODO: test timeout (PHP sleep?)
 //       test new gotHTML and body fallbacks -- make sure path coverage is complete
-//       use try-catch when invoking callbacks
-//       try old firefox versions
 
 var SPARE = function ()
 {
