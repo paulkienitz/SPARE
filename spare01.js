@@ -198,7 +198,7 @@ var SPARE = function ()
                 xhr.overrideMimeType("text/html");
                 canOverrideMimeType = true;
             }
-        catch (e) { }
+            catch (e) { }
         if (canUseQuerySelector)
             try
             {
@@ -231,16 +231,16 @@ var SPARE = function ()
                 supportLevel: function ()
                 {
                     if (!canDoAJAX)
-                        return 0;	                // SPARE will not work at all
+                        return 0;	            // SPARE will not work at all
                     else if (canUseResponseXML && canOverrideMimeType)
-                        return 3;	                // the browser appears to support current standards
+                        return 3;	            // the browser appears to support current standards
                     else if (canUseQuerySelector)
                         return 2;                   // the browser is modern enough so SPARE should work
                     else
                         return 1;                   // SPARE can implement fragment downloads only (no newElementID)
                 },
 
-                // Our principal method - see http://paulkienitz.net/SPARE-doc.html for how to use.
+                // Our principal method - see https://github.com/paulkienitz/SPARE/blob/master/README.md for how to use.
                 replaceContent: function (elementID, pageURL, newElementID, postData,
                                           onSuccess, onFailure, onSuccessFailureData,
                                           transitionalContentID, timeout)
@@ -258,7 +258,7 @@ var SPARE = function ()
                     if (isNaN(timeout) && !isNaN(SPARE.timeout))
                         timeout = SPARE.timeout;
                     if (isNaN(timeout) || timeout < 1 || timeout > 3600)
-                        timeout = 30;
+                        timeout = null;
 
                     var extractor = new ResultExtractor(newElementID, victim);
                     var tranny = new Transaction(pageURL, postData, timeout, extractor,
