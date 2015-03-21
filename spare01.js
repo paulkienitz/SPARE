@@ -101,7 +101,7 @@ var SPARE = function ()
         }
     };                      // ResultExtractor
 
-    var Transaction = function (url, postData, timeout, extractor, onSuccess, onFailure, hookData)
+    var Transaction = function (url, postData, timeout, extractor, callbackContextData, onSuccess, onFailure)
     {
         // private members
         var xmlhttp = new XMLHttpRequest();
@@ -139,7 +139,7 @@ var SPARE = function ()
             if (typeof(onFailure) == "string")
                 exec(onFailure);
             else if (typeof(onFailure) == "function")
-                onFailure(hookData, errorNumber, errorText);
+                onFailure(callbackContextData, errorNumber, errorText);
             else
                 window.location.href = url;
         };
@@ -151,7 +151,7 @@ var SPARE = function ()
                 if (typeof(onSuccess) == "string")
                     exec(onSuccess);
                 else if (typeof(onSuccess) == "function")
-                    onSuccess(hookData);
+                    onSuccess(callbackContextData);
             }
             else
                 downloadFailed(extractor.fakeErrorNumber, extractor.fakeErrorText);
@@ -217,11 +217,13 @@ var SPARE = function ()
                 // global defaulting values settable by the caller
                 timeout: 30,
                 transitionalContentID: "",
+                onSuccess: null,
+                onFailure: null,
 
                 // undocumented exposure of semiprivate goodies, for those who read the source
-                makeTransaction: function (url, postData, timeout, extractor, onSuccess, onFailure, hookData)
+                makeTransaction: function (url, postData, timeout, extractor, callbackContextData, onSuccess, onFailure)
                 {
-                    return new Transaction(url, postData, timeout, extractor, onSuccess, onFailure, hookData);
+                    return new Transaction(url, postData, timeout, extractor, callbackContextData, onSuccess, onFailure);
                 },
 
                 makeResultExtractor: function (newElementID, victim)
@@ -244,7 +246,7 @@ var SPARE = function ()
 
                 // Our principal method - see https://github.com/paulkienitz/SPARE/blob/master/README.md for how to use.
                 replaceContent: function (elementID, pageURL, newElementID, postData,
-                                          onSuccess, onFailure, onSuccessFailureData,
+                                          callbackContextData, onSuccess, onFailure, 
                                           transitionalContentID, timeout)
                 {
                     if (!canDoAJAX || (newElementID && !canUseQuerySelector && !canUseResponseXML))
@@ -255,6 +257,10 @@ var SPARE = function ()
                     if (!victim)
                         throw new Error("SPARE could not find target element '" + elementID + "'");
 
+                    if (!onSuccess)
+                        onSuccess = SPARE.onSuccess;
+                    if (!onFailure)
+                        onFailure = SPARE.onFailure;
                     if (!transitionalContentID)
                         transitionalContentID = SPARE.transitionalContentID;
                     if (isNaN(timeout) && !isNaN(SPARE.timeout))
@@ -264,7 +270,7 @@ var SPARE = function ()
 
                     var extractor = new ResultExtractor(newElementID, victim);
                     var tranny = new Transaction(pageURL, postData, timeout, extractor,
-                                                 onSuccess, onFailure, onSuccessFailureData);
+                                                 onSuccess, onFailure, callbackContextData);
                     if (transitionalContentID)
                     {
                         var tron = document.getElementById(transitionalContentID);
