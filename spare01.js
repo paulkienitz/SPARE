@@ -2,8 +2,7 @@
 // for Replacing Elements.  By Paul Kienitz, distributable under Attribution
 // Share-Alike terms, per http://creativecommons.org/licenses/by-sa/4.0/
 
-// TODO: test timeout (PHP sleep?)
-//       test new gotHTML and body fallbacks -- make sure path coverage is complete
+// TODO: test new gotHTML and body fallbacks -- make sure path coverage is complete
 
 var SPARE = function ()
 {
@@ -134,8 +133,8 @@ var SPARE = function ()
         var downloadFailed = function (errorNumber, errorText)
         {
             if (typeof(onFailure) == "string")
-                exec(onFailure);
-            else if (typeof(onFailure) == "function")
+                eval(onFailure);
+            else if (onFailure)    // trying to tell if it's really a function fails in some browsers
                 onFailure(callbackContextData, errorNumber, errorText);
             else
                 window.location.href = url;
@@ -146,8 +145,8 @@ var SPARE = function ()
             if (extractor.extractAndUse(xmlhttp))
             {
                 if (typeof(onSuccess) == "string")
-                    exec(onSuccess);
-                else if (typeof(onSuccess) == "function")
+                    eval(onSuccess);
+                else if (onSuccess)
                     onSuccess(callbackContextData);
             }
             else
