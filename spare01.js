@@ -211,7 +211,7 @@ var SPARE = function ()
     // create the SPARE object accessed by the caller
     return  {
                 // global defaulting values settable by the caller
-                timeout: 30,
+                timeout: null,
                 transitionalContentID: "",
                 onSuccess: null,
                 onFailure: null,
@@ -242,7 +242,7 @@ var SPARE = function ()
 
                 // Our principal method - see https://github.com/paulkienitz/SPARE/blob/master/README.md for how to use.
                 replaceContent: function (elementID, pageURL, newElementID, postData,
-                                          callbackContextData, onSuccess, onFailure, 
+                                          callbackContextData, onSuccess, onFailure,
                                           transitionalContentID, timeout)
                 {
                     if (!canDoAJAX || (newElementID && !canUseQuerySelector && !canUseResponseXML))
