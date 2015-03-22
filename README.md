@@ -9,7 +9,9 @@ How it's designed to work was inspired by ASP.Net's `UpdatePanel` control, but a
 
 To use it, you give it the ID of any element on your page (which we will call the target), the URL of a new page, and an ID on that page.  It replaces the contents of the local document's target element with the content of the named element on the new page.  SPARE is most seamlessly used when you have a site design where many pages share common markup for headers, navigation, and so on, and the real differences are in a bounded content area.  SPARE lets you load new content into that area without refreshing the rest of the page.  In this use case, often the two IDs will be the same.
 
-You can just as easily select content from pages not resembling the calling page.  You can optionally send POST data as well.  Another option is to display intermediate content (e.g. "Loading...") during the transaction.  And there's an option to invoke callback functions on success or failure.  None of these is required for basic usage.  And if the URL you give returns a page fragment, so you don't have to select an element within it, that's even simpler.  That mode will even work with some old browsers where SPARE doesn't support whole-page mode with a second ID, such as IE 7.
+You can just as easily select content from pages not resembling the calling page.  You can optionally send POST data as well.  Another option is to display intermediate content (e.g. "Loading...") during the transaction.  And there's an option to invoke callback functions on success or failure.  None of these is required for basic usage.
+
+And if the URL you give returns a page fragment, so you don't have to select an element within it, that's even simpler.  That mode will even work with some old browsers where SPARE doesn't support whole-page mode with a second ID, such as IE 7.  And it  generally works for text content that isn't even HTML (but don't try it with binary content).
 
 --------
 
