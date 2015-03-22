@@ -212,7 +212,7 @@ var SPARE = function ()
     return  {
                 // global defaulting values settable by the caller
                 timeout: null,
-                transitionalContentID: "",
+                transitionalContentID: null,
                 onSuccess: null,
                 onFailure: null,
 
