@@ -11,11 +11,11 @@ To use it, you give it the ID of any element on your page (which we will call th
 
 You can just as easily select content from pages not resembling the calling page.  You can optionally send POST data as well.  Another option is to display intermediate content (e.g. "Loading...") during the transaction.  And there's an option to invoke callback functions on success or failure.  None of these is required for basic usage.
 
-And if the URL you give returns a page fragment, so you don't have to select an element within it, that's even simpler.  That mode will even work with some old browsers where SPARE doesn't support whole-page mode with a second ID, such as IE 7.  And it  generally works for text content that isn't even HTML (but don't try it with binary content).
+And if the URL you give returns a page fragment, so you don't have to select an element within it, that's even simpler.  That mode will even work with some old browsers where SPARE doesn't support whole-page mode with a second ID, such as IE 7.  And it generally works for text content that isn't even HTML (but don't try it with binary content).
 
 --------
 
-The Javascript API consists of an object named **`SPARE`** with two public methods.  Note that you do not use a new operator to instantiate SPARE; there's just the one static object.  The main method you’ll use is **`SPARE.replaceContent`**, which takes the following arguments, all of string type unless stated otherwise:
+The Javascript API consists of an object named **`SPARE`** with two public methods.  Note that you do not use a `new` operator to instantiate SPARE; there's just the one static object.  The main method you’ll use is **`SPARE.replaceContent`**, which takes the following arguments, all of string type unless stated otherwise:
 
 > **`elementID`** (required): the DOM ID of the target element in your document, which will have its contents replaced.  If the ID is not found in your document, SPARE throws an immediate exception.
 
@@ -47,8 +47,10 @@ The second public method is **`SPARE.supportLevel`**, which takes no arguments. 
 
 > **1**:  This browser has very limited support, and SPARE will only be able to download page fragments.  In other words, you cannot use the `newElementID` parameter.
 
-> **2**:  This browser has enough support that all features of SPARE should function.
+> **2**:  This browser has enough support that all features of SPARE should function, though not with optimum efficiency.
 
 > **3**:  This browser supports the latest standards and SPARE will function at its best.
+
+At this time, the level 3 browsers are Firefox and Chrome, plus the Android browser from Kitkat onwards.  Opera and (surprisingly) Safari are still at level 2.  IE 10 is a special case: if you supply a `newElementID` value it works almost like a level 3 browser, but if you don't give one, it's strictly level 2.  The function will return 2 for it.
 
 **IMPORTANT**:  It is easier than you think to get into a state where your `supportLevel` value is 1, and AJAX with `newElementID` doesn’t work.  This doesn’t just happen if your user is running something ancient like IE 7 — it will happen even in IE 10 if your page provokes IE into Compatibility View mode!  **Make sure your markup is up to snuff so IE uses Standards mode.**  If you want AJAX on funky pages with markup for archaic browsers, use jQuery.
