@@ -1,8 +1,5 @@
-// This is version 01 of the SPARE framework, which supports Static Page AJAX
-// for Replacing Elements.  By Paul Kienitz, distributable under Attribution
-// Share-Alike terms, per http://creativecommons.org/licenses/by-sa/4.0/
-
-// TODO: test new gotHTML and body fallbacks -- make sure path coverage is complete
+// This is version 01 of SPARE (Static Page AJAX for Replacing Elements), a JavaScript object.
+// Copyright 2015 Paul Kienitz, Apache 2.0 license: http://www.apache.org/licenses/LICENSE-2.0
 
 var SPARE = function ()
 {
