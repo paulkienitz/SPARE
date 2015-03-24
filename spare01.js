@@ -2,6 +2,7 @@
 // Copyright 2015 Paul Kienitz, Apache 2.0 license: http://www.apache.org/licenses/LICENSE-2.0
 
 // TODO: add form encoder for release 02
+//       continue to look for ways to improve the initial capabilities test
 
 var SPARE = function ()
 {
