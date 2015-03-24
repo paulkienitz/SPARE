@@ -1,6 +1,8 @@
 // This is version 01 of SPARE (Static Page AJAX for Replacing Elements), a JavaScript object.
 // Copyright 2015 Paul Kienitz, Apache 2.0 license: http://www.apache.org/licenses/LICENSE-2.0
 
+// TODO: add form encoder for release 02
+
 var SPARE = function ()
 {
     // private variables
@@ -25,48 +27,61 @@ var SPARE = function ()
             var gotHTML = false;
             try
             {
-                // This test will succeed in current browsers implementing the latest standards.
-                // One case that doesn't work is IE 10 in fragment mode -- it wants complete HTML.
-                // We have to detect that case before issuing the request, to avoid bombing here.
-                if (xmlhttp.responseType == "document" && xmlhttp.responseXML
-                    && (this.documentFragmentMode || xmlhttp.responseXML.getElementById))
+                var useDocument = false, useText = false;
+                // Modern browsers support either responseXML or responseText depending on
+                // responseType, and accessing the wrong one throws an exception.  In older
+                // browsers, responseType may have no effect, but we try to set it to "text".
+                try
+                {
+                    useDocument = xmlhttp.responseType == "document" && xmlhttp.responseXML
+                               && !!(this.documentFragmentMode ? xmlhttp.responseXML.getElementsByTagName : xmlhttp.responseXML.getElementById);
+                }
+                catch (e) { }
+                try
+                {
+                    useText = xmlhttp.responseType != "document"
+                           && xmlhttp.responseText && xmlhttp.responseText.length;
+                }
+                catch (e) { }
+                // IE10 can use this path *if* the content is completely valid HTML; it bombs on fragments.
+                if (useDocument)
                 {
                     gotHTML = true;
-                    if (this.documentFragmentMode)      // some browsers wrap fragments in simulated <html> and <body> tags
-                        newContentDomParent = xmlhttp.responseXML.getElementsByTagName("body")[0] || xmlhttp.responseXML;
+                    if (this.documentFragmentMode)
+                    {
+                        // some browsers wrap fragments in simulated <html> and <body> tags
+                        var body = xmlhttp.responseXML.getElementsByTagName("body");
+                        newContentDomParent = body[0] || xmlhttp.responseXML;
+                    }
                     else
                         newContentDomParent = xmlhttp.responseXML.getElementById(newElementID);
                 }
-                // This fallback approach works in many browsers that can't handle the first option.
-                // In some cases, this path is only available if responseType is initialized to "text".
-                if (!newContentDomParent && xmlhttp.responseText)
+                // This approach works in many browsers that can't handle the first option.
+                if (!newContentDomParent && useText)
                 {
                     if (this.documentFragmentMode)
                     {
-                        // This works in everything I've tested back to IE 7.
+                        // This works in everything I've tested back to IE 7, even on invalid HTML.
                         newContentDomParent = document.createElement("div");
                         newContentDomParent.innerHTML = xmlhttp.responseText;
                         gotHTML = true;
-                        // Some browsers may wrap the fragment in a fake body.
-                        newContentDomParent = newContentDomParent.getElementsByTagName("body")[0] || newContentDomParent;
+                        // Some browsers might wrap the fragment in a fake body.
+                        var body = newContentDomParent.getElementsByTagName("body");
+                        newContentDomParent = body[0] || newContentDomParent;
                     }
                     else           // expect a complete page, find the named element
                     {
-                        // This works in older mobile browsers, and in IE 8-10, but IE 7 has no querySelector.
+                        // This works in Safari and pre-kitkat Android, and in IE 8-10, but IE 7 has no querySelector.
                         var cage = document.createElement("div");
                         cage.innerHTML = xmlhttp.responseText;
                         gotHTML = true;
                         newContentDomParent = cage.querySelector("#" + newElementID);
                     }
                 }
-                else       // this might happen if the URL points to non-textual data?
-                {
-                    newElementID = null;    // take the "could not interpret" path below
-                }
                 if (!gotHTML)
                 {
                     this.fakeErrorNumber = -2;
-                    this.fakeErrorText = "SPARE could not interpret the content of " + url + " as HTML";
+                    this.fakeErrorText = "SPARE could not interpret the content of " + xmlhttp.ourUrl + " as HTML";
                     return false;
                 }
                 else if (!newContentDomParent && newElementID)
@@ -166,9 +181,10 @@ var SPARE = function ()
         if (typeof(postData) == "string")
             verb = "POST";
         xmlhttp.onreadystatechange = stateChangedHandler;
+        xmlhttp.ourUrl = url;
         xmlhttp.open(verb, url, true);
         if (canUseResponseXML && (canOverrideMimeType || !extractor.documentFragmentMode))
-        {          // heuristic: IE 10 cannot use responseXML in fragment mode ^^^
+        {          // if we set canUseResponseXML for IE 10, ^^^ it still can't handle fragment mode
             xmlhttp.responseType = "document";
             if (canOverrideMimeType)
                 xmlhttp.overrideMimeType("text/html");
@@ -179,7 +195,7 @@ var SPARE = function ()
 
 
     // initialize the capability flags
-    if (window.XMLHttpRequest && document.getElementById)
+    if ("XMLHttpRequest" in window && "getElementById" in document)
     {
         canDoAJAX = true;
         if (document.querySelector)         // false for IE <= 7 and IE compatibility view,
@@ -195,9 +211,12 @@ var SPARE = function ()
             }
             catch (e) { }
         if (canUseQuerySelector)
+            // I don't like this test because it can produce console warnings in good browsers.
+            // But I can't find any other approach that doesn't produce false positives for
+            // browsers such as Safari and Opera.
             try
             {
-                xhr.responseType = "document";   // under modern rules, setting this is forbidden when synchronous
+                xhr.responseType = "document";    // under modern rules, setting this is forbidden when synchronous
             }
             catch (e)
             {
@@ -228,9 +247,9 @@ var SPARE = function ()
                 supportLevel: function ()
                 {
                     if (!canDoAJAX)
-                        return 0;	            // SPARE will not work at all
+                        return 0;                   // SPARE will not work at all
                     else if (canUseResponseXML && canOverrideMimeType)
-                        return 3;	            // the browser appears to support current standards
+                        return 3;                   // the browser appears to support current standards
                     else if (canUseQuerySelector)
                         return 2;                   // the browser is modern enough so SPARE should work
                     else
@@ -260,6 +279,10 @@ var SPARE = function ()
                         timeout = SPARE.timeout;
                     if (isNaN(timeout) || timeout < 1 || timeout > 3600)
                         timeout = null;
+
+                    // OPTIONAL: we could set canUseResponseXML for IE 10 here, by testing for
+                    // document.body.style.msTouchAction or the like... I don't because I've found
+                    // it's too fragile when it encounters content that isn't complete and valid HTML.
 
                     var extractor = new ResultExtractor(newElementID, victim);
                     var tranny = new Transaction(pageURL, postData, timeout, extractor,
