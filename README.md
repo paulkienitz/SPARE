@@ -1,9 +1,7 @@
 # SPARE
-### Static Page AJAX to Replace Elements -- a lightweight client-side library
+### Static Page AJAX to Replace Elements -- a lightweight client-side library, release 1
 
-=> NOTE: initial testing is not yet complete.  Not currently recommended for use.
-
-It's a small client-side AJAX framework which requires no server-side support.  In fact, the case it's optimized for is when the server provides only plain static HTML pages.  It's also super easy to use: you only call one method.
+ISPARE is a small client-side AJAX framework which requires no server-side support.  In fact, the case it's optimized for is when the server provides only plain static HTML pages.  It's also super easy to use: you only need to call one method.
 
 How it's designed to work was inspired by ASP.Net's `UpdatePanel` control, but as implemented, it's even more similar to jQuery's `load()` method, at much lower cost (and as a tradeoff, less support for downlevel browsers).
 
@@ -23,15 +21,15 @@ The Javascript API consists of an object named **`SPARE`** with two public metho
 
 > **`newElementID`**:  the DOM ID of the element within the downloaded page which will be the source of the replacement content.  If you don't provide any value, then it puts the entire content returned by the URL into your target element.  This is only appropriate if the server is set up to return fragmentary pages, instead of complete ones with `<html>` tags.  If a complete page is received, it will use the content of the `<body>` tag.
 
-> **`postData`**: values to be sent to the URL as form arguments, which must be already formatted suitably.  If null or undefined, it requests the page with a simple GET; to do a POST with no arguments, pass `""`.  Note: at present SPARE supports only form-urlencoded data, not multipart posts, so you can’t do file uploads.
+> **`postData`**: values to be sent to the URL as form arguments, which must be already formatted suitably.  If null or undefined, it requests the page with a simple GET; to do a POST with no arguments, pass `""`.  Note: at present SPARE supports only form-urlencoded data, not multipart posts, so you can’t do file uploads.  (I intend to add a formatting helper for that encoding.)
 
 > **`callbackContextData`**: an arbitrary object which is passed as the first argument to whichever of `onSuccess` or `onFailure` is invoked, so you can give them some information about the context in which they were called.
 
 > **`onSuccess`**: a function to be invoked after the new content is successfully loaded.  If you pass a string, it will be executed with `eval`.  If it's a function object, it will be passed the `callbackContextData` value.  If defaulted, no action is taken aside from updating the content of your target element.  Any exceptions that occur in invoking it will pass through uncaught.  You can set a default value globally by assigning the function to the global variable **`SPARE.onSuccess`**.
 
-> **`onFailure`**: similar, but invoked if there's a failure in loading the new content.  Again, the first argument is your `callbackContextData` value.  The second argument passed to it is an HTTP result number, such as 404 for page not found, and the third is the text of the error message received  If the onFailure argument is not given, the default failure behavior is to navigate the browser window to the URL passed in.  That is an appropriate fallback if you're just using AJAX to smooth transitions during normal navigation, but  will not be useful if the server is returning only fragmentary pages.  Again, exceptions are not caught.  You can set a default value globally by assigning the function to the global variable **`SPARE.onFailure`**.  *NOTE*: the error number may also be negative, if SPARE fails to use the content after a successful download:
->> -1 means that newElementID was not found in the downloaded content  
->> -2 means the content could not be parsed as HTML  
+> **`onFailure`**: similar, but invoked if there's a failure in loading the new content.  Again, the first argument is your `callbackContextData` value.  The second argument passed to it is an HTTP result number, such as 404 for page not found, and the third is the text of the error message received.  If the onFailure argument is not given, the default failure behavior is to navigate the browser window to the URL passed in.  That is an appropriate fallback if you're just using AJAX to smooth transitions during normal navigation, but  will not be useful if the server is returning only fragmentary pages.  Again, exceptions are not caught.  You can set a default value globally by assigning the function to the global variable **`SPARE.onFailure`**.  *NOTE*: the error number may also be negative, if SPARE fails to use the content after a successful download:
+>> -1 means that newElementID was not found in the downloaded content,  
+>> -2 means the content could not be parsed as HTML,  
 >> -3 means an unexpected exception was caught in processing the content.  
 >> 0 is also possible, with null or meaningless text.  Requests do sometimes fail with no explanation available.  This can happen, for instance, when making a forbidden cross-site request.
 
@@ -47,7 +45,7 @@ The second public method is **`SPARE.supportLevel`**, which takes no arguments. 
 
 > **1**:  This browser has very limited support, and SPARE will only be able to download page fragments.  In other words, you cannot use the `newElementID` parameter.
 
-> **2**:  This browser has enough support that all features of SPARE should function, though not with optimum efficiency.
+> **2**:  This browser has enough support that all features of SPARE should function.
 
 > **3**:  This browser supports the latest standards and SPARE will function at its best.
 
