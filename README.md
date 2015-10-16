@@ -51,6 +51,6 @@ The second public method is **`SPARE.supportLevel`**, which takes no arguments. 
 
 > **3**:  This browser supports the latest standards and SPARE will function at its best.
 
-At this time, the level 3 browsers are Firefox and Chrome, plus the Android browser from Kitkat onwards.  IE, Opera and (surprisingly) Safari are still at level 2.  IE 10 has limited support for level 3 functionality, but I found it to be too fragile to use in practice.
+At this time, the level 3 browsers are Firefox and Chrome, plus the Android browser from Kitkat onwards.  IE, Opera and (surprisingly) Safari are still at level 2.  IE 10 and 11 have limited support for level 3 functionality, but I found it to be too fragile to use in practice.
 
 **IMPORTANT**:  It is easier than you think to get into a state where your `supportLevel` value is 1, and AJAX with `newElementID` doesn’t work.  This doesn’t just happen if your user is running something ancient like IE 7 — it will happen even in IE 10 if your page provokes IE into Compatibility View mode!  **Make sure your markup is up to snuff so IE uses Standards mode.**  If you want AJAX on funky pages with markup for archaic browsers, use jQuery.
