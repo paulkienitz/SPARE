@@ -30,8 +30,8 @@ The Javascript API consists of an object named **`SPARE`** with two public metho
 > **`onSuccess`**: a function to be invoked after the new content is successfully loaded.  If you pass a string, it will be executed with `eval`.  If it's a function object, it will be passed the `callbackContextData` value.  If defaulted, no action is taken aside from updating the content of your target element.  Any exceptions that occur in invoking it will pass through uncaught.  You can set a default value globally by assigning the function to the global variable **`SPARE.onSuccess`**.
 
 > **`onFailure`**: similar, but invoked if there's a failure in loading the new content.  Again, the first argument is your `callbackContextData` value.  The second argument passed to it is an HTTP result number, such as 404 for page not found, and the third is the text of the error message received.  If the onFailure argument is not given, the default failure behavior is to navigate the browser window to the URL passed in.  That is an appropriate fallback if you're just using AJAX to smooth transitions during normal navigation, but  will not be useful if the server is returning only fragmentary pages.  Again, exceptions are not caught.  You can set a default value globally by assigning the function to the global variable **`SPARE.onFailure`**.  *NOTE*: the error number may also be negative, if SPARE fails to use the content after a successful download:
->> -1 means that newElementID was not found in the downloaded content,  
->> -2 means the content could not be parsed as HTML,  
+>> -1 means that `newElementID` was not found in the downloaded content,  
+>> -2 means the content could not be parsed as HTML (in practice, most browsers accept bad HTML without error),
 >> -3 means an unexpected exception was caught in processing the content.  
 >> 0 is also possible, with null or meaningless text.  Requests do sometimes fail with no explanation available.  This can happen, for instance, when making a forbidden cross-site request.
 
@@ -53,4 +53,4 @@ The second public method is **`SPARE.supportLevel`**, which takes no arguments. 
 
 At this time, the level 3 browsers are Firefox and Chrome, plus the Android browser from Kitkat onwards.  IE, Opera and (surprisingly) Safari are still at level 2.  IE 10 and 11 have limited support for level 3 functionality, but I found it to be too fragile to use in practice.
 
-**IMPORTANT**:  It is easier than you think to get into a state where your `supportLevel` value is 1, and AJAX with `newElementID` doesn’t work.  This doesn’t just happen if your user is running something ancient like IE 7 — it will happen even in IE 10 if your page provokes IE into Compatibility View mode!  **Make sure your markup is up to snuff so IE uses Standards mode.**  If you want AJAX on funky pages with markup for archaic browsers, use jQuery.
+**IMPORTANT**:  It is easier than you think to get into a state where your `supportLevel` value is 1, and AJAX with `newElementID` doesn’t work.  This doesn’t just happen if your user is running something ancient like IE 7 — it will happen even in IE 11 if your page provokes IE into Compatibility View mode!  **Make sure your markup is up to snuff so IE uses Standards mode.**  If you want AJAX on funky pages with markup for archaic browsers, use jQuery.
