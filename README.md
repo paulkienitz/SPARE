@@ -5,7 +5,7 @@
 
 SPARE is a small client-side AJAX framework which requires no server-side support.  In fact, the case it's optimized for is when the server provides only plain static HTML pages.  It's also super easy to use: you only need to call one method.
 
-How it's designed to work was inspired by ASP.Net's `UpdatePanel` control, but as implemented, it's even more similar to jQuery's `load()` method, at much lower cost (and as a tradeoff, less support for downlevel browsers).
+How it's designed to work was inspired by ASP.Net's `UpdatePanel` control, but as implemented, it's even more similar to jQuery's `load()` method, at lower cost (and as a tradeoff, less support for downlevel browsers than 1.x versions of jQuery).
 
 To use it, you give it the ID of any element on your page (which we will call the target), the URL of a new page, and an ID on that page.  It replaces the contents of the local document's target element with the content of the named element on the new page.  SPARE is most seamlessly used when you have a site design where many pages share common markup for headers, navigation, and so on, and the real differences are in a bounded content area.  SPARE lets you load new content into that area without refreshing the rest of the page.  In this use case, often the two IDs will be the same.
 
