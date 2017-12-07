@@ -28,3 +28,5 @@ Firefox ignores it.  So does Chrome.  Safari and Opera do pay attention to the t
 I think all browsers support an alternate way of setting the title.  Since passing
 no value might clobber the title entirely, I'd probably better set it explicitly.
 
+As of 2017, I'm now thinking that the transitionalContentID feature should probably
+be removed.
