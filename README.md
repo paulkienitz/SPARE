@@ -39,9 +39,9 @@ The Javascript API consists of an object named **`SPARE`** with two public metho
 
 >> 0 is also possible, with null or meaningless text.  Requests do sometimes fail with no explanation available.  This can happen, for instance, when making a forbidden cross-site request.
 
-> **`transitionalContentID`**: the DOM ID of an element in your document (normally one which is hidden from view) which contains some sort of placeholder content to be displayed while waiting for the new material to download.  That element's content is copied into the target element before the download starts, and is replaced in turn when it completes.  If left undefined, the default behavior is to leave the original content in place while downloading.  *Note* that once the original content is replaced, it is not recoverable if the request fails.  You can set a default value globally by assigning the ID string to the global variable **`SPARE.transitionalContentID`**.
+> **`transitionalContentID`**: the DOM ID of an element in your document (normally one which is hidden from view) which contains some sort of placeholder content to be displayed while waiting for the new material to download.  That element's content is copied into the target element before the download starts, and is replaced in turn when it completes.  If left undefined, the default behavior is to leave the original content in place while downloading.  *Note* that once the original content is replaced, it is not recoverable if the request fails.  You can set a default value globally by assigning the ID string to the global variable **`SPARE.transitionalContentID`**.  *NOTE*: This feature may be deleted in a future version... in hindsight, it wasn't our best idea.
 
-> **`timeout`**: a number.  If the new data doesn't download within this many seconds, the operation fails.  The supported range is from 1 to 3600, and the default is to leave it up to the browser.  You can set a different default globally by putting a number in the global variable **`SPARE.timeout`**.  If the time expires, `onFailure` will be called with error code 408 (Request Timeout), with the error message being "SPARE time limit exceeded" instead of "Request Timeout".  (All internal messages to `onFailure` start with the word "SPARE".)
+> **`timeout`**: a number.  If the new data doesn't download within this many seconds, the operation fails.  The supported range is from 1 to 3600, and the default is to leave it up to the browser.  You can set a different default globally by putting a number in the global variable **`SPARE.timeout`**.  If the time expires, `onFailure` will be called with error code 408 (Request Timeout), with the error message being "SPARE time limit exceeded" instead of "Request Timeout".  (All internal messages to `onFailure` start with the word "SPARE".)  Note that setting a large value does not guarantee that the browser won't fail the operation sooner.
 
 --------
 
@@ -49,12 +49,12 @@ The second public method is **`SPARE.supportLevel`**, which takes no arguments. 
 
 > **0**:  This browser has insufficient support and SPARE will not operate at all.
 
-> **1**:  This browser has very limited support, and SPARE will only be able to download page fragments.  In other words, you cannot use the `newElementID` parameter.
+> **1**:  This browser has very limited support, and SPARE will only be able to download pre-trimmed page fragments.  In other words, you cannot use the `newElementID` parameter.
 
-> **2**:  This browser has enough support that all features of SPARE should function.
+> **2**:  This browser has enough support that all features of SPARE should function adequately.
 
 > **3**:  This browser supports the latest standards and SPARE will function at its best.
 
-As of 2015, the browsers known to be at level 3 are Firefox and Chrome, plus the Android browser from Kitkat onwards.  IE, Opera and (surprisingly) Safari are still at level 2.  (2017 update: Safari is apparently at level 3 now.)  IE 10 and 11 have limited support for level 3 functionality, but I found it to be too fragile to use in practice.  Microsoft Edge has not been stringently tested yet, but appears to be at level 3.
+As of 2015, the browsers known to be at level 3 are Firefox and Chrome, plus the Android browser from Kitkat onwards.  IE, Opera and (surprisingly) Safari are still at level 2.  IE 10 and 11 have limited support for level 3 functionality, but I found it to be too fragile to use in practice.  (2017 update:  Safari 8 and up are at level 3.  Microsoft Edge 13 is at level 3; not sure about 12.)
 
-**IMPORTANT**:  It is easier than you think to get into a state where your `supportLevel` value is 1, and AJAX with `newElementID` doesn’t work.  This doesn’t just happen if your user is running something ancient like IE 7 — it will happen even in IE 11 if your page provokes IE into Compatibility View mode!  **Make sure your markup is up to snuff so IE uses Standards mode.**  If you want AJAX on funky pages with markup for archaic browsers, use jQuery.
+**IMPORTANT**:  It is easier than you think to get into a state where your `supportLevel` value is 1, and AJAX with `newElementID` doesn’t work.  This doesn’t just happen if your user is running something ancient like IE 7 — it will happen even in IE 11 if your page provokes IE into Compatibility View mode!  **Make sure your markup is up to snuff so IE uses Standards mode.**  If you want AJAX on funky pages with markup for archaic browsers, use jQuery 1.x.
