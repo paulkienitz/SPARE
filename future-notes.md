@@ -30,3 +30,6 @@ no value might clobber the title entirely, I'd probably better set it explicitly
 
 As of 2017, I'm now thinking that the transitionalContentID feature should probably
 be removed.
+
+Oh, and it probably needs support for restoring or setting focus if there are form
+inputs in the changed area.
