@@ -29,7 +29,8 @@ I think all browsers support an alternate way of setting the title.  Since passi
 no value might clobber the title entirely, I'd probably better set it explicitly.
 
 As of 2017, I'm now thinking that the transitionalContentID feature should probably
-be removed.
+be removed.  Instead, let's see if we can add some kind of hook to call when the
+request is actually made, via onreadystatechanged or whatever.
 
 Oh, and it probably needs support for restoring or setting focus if there are form
 inputs in the changed area.
