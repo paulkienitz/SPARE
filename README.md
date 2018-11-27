@@ -11,7 +11,7 @@ To use it, you give it the ID of any element on your page (which we will call th
 
 You can just as easily select content from pages not resembling the calling page.  You can optionally send POST data as well.  Another option is to display intermediate content (e.g. "Loading...") during the transaction.  And there's an option to invoke callback functions on success or failure.  None of these is required for basic usage.
 
-And if the URL you give returns a page fragment, so you don't have to select an element within it, that's even simpler.  That mode will even work with some old browsers where SPARE doesn't support whole-page mode with a second ID, such as IE 7.  And it generally works for text content that isn't even HTML (but don't try it with binary content).
+And if the URL you give returns a page fragment, so you don't have to select an element within it, that's even simpler.  That mode will even work with some old browsers where SPARE doesn't support the normal mode with a second ID, such as IE 7.  And it generally works for text content that isn't even HTML (but don't try it with binary content).
 
 --------
 
@@ -21,7 +21,7 @@ The Javascript API consists of an object named **`SPARE`** with two public metho
 
 > **`pageURL`** (required): the web address of the HTML content to be used for that replacement.  This can be a relative URL for content on the same site as the current page.  (Cross-domain URLs are commonly blocked by browser security anyway.)
 
-> **`newElementID`**:  the DOM ID of the element within the downloaded page which will be the source of the replacement content.  If you don't provide any value, then it puts the entire content returned by the URL into your target element.  This is most appropriate if the server is set up to return fragmentary pages, instead of complete ones with `<html>` tags.  If a complete page is received, it will use the content of the `<body>` tag.
+> **`newElementID`**:  the DOM ID of the element within the downloaded page which will be the source of the replacement content.  If you don't provide any value, then it puts the entire content returned by the URL into your target element.  This is most appropriate if the server is set up to return fragmentary pages, instead of complete ones with `<html>` tags.  If a complete page is received and this ID is not given, it will use the content of the `<body>` tag.
 
 > **`postData`**: values to be sent to the URL as form arguments, which must be already formatted suitably.  If null or undefined, it requests the page with a simple GET; to do a POST with no arguments, pass `""`.  Note: at present SPARE supports only form-urlencoded data, not multipart posts, so you can’t do file uploads.  (I intend to add a formatting helper for that encoding, if there is interest.)
 
