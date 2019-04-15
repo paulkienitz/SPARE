@@ -62,7 +62,7 @@ As of 2015, the browsers known to be at level 3 are Firefox and Chrome, plus the
 --------
 
 TODO in future versions (last updated 2019):
-Add supportLevel value of 4 for using fetch API instead of XHR.  (Supported by Edge 14, Safari 10, Opera 29, Android Chrome 67.)
+Add supportLevel value of 4 for using fetch API instead of XHR.  (Supported by Edge 12, Safari 8, Firefox 29, Opera 20, Chrome 33.)
 Consider removing supportLevel 1 as unnecessary, and see if there's still any value for supportLevel 3 -- maybe we only need 2 and 4.
 Better postback support.
 Better management of back-button history.
