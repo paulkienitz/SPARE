@@ -34,3 +34,14 @@ request is actually made, via onreadystatechange or whatever.
 
 Oh, and it probably needs support for restoring or setting focus if there are form
 inputs in the changed area.
+
+--------------
+
+Looking at this again in 2019, it's clear that what this needs in order to keep up
+with the times is a fourth supportLevel based on fetch.   We can drop level 3 as an
+evolutionary dead end, and drop level 1 as obsolete, so almost all browsers will be
+either level 2 or level 4.
+
+Also, an alternate entry point that returns a promise instead of taking callbacks would be good to have.
+
+I definitely want to deprecate the transtionalContentID feature.
