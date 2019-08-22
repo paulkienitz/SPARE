@@ -37,11 +37,15 @@ inputs in the changed area.
 
 --------------
 
-Looking at this again in 2019, it's clear that what this needs in order to keep up
-with the times is a fourth supportLevel based on fetch.   We can drop level 3 as an
-evolutionary dead end, and drop level 1 as obsolete, so almost all browsers will be
-either level 2 or level 4.
+Looking at this again in 2019, it's clear that we are coming to a fork in the road.
+At first glance, it looks like what this needs in order to keep up with the times is
+a fourth supportLevel based on fetch.   We could drop level 3 as an evolutionary dead
+end, and drop level 1 as obsolete, so almost all browsers will be either level 2 or
+level 4.  But upon exploring this, I find that fetch may not actually add anything
+better than what we already have in level 2 support; maybe the safe way forward is
+to ignore fetch and keep using XmlHTTPRequest, unless it starts being phased out.
 
-Also, an alternate entry point that returns a promise instead of taking callbacks would be good to have.
+Also, an alternate entry point that returns a promise instead of taking callbacks
+would be good to have.  Make sure it works with "await".
 
 I definitely want to deprecate the transtionalContentID feature.
