@@ -45,6 +45,9 @@ level 4.  But upon exploring this, I find that fetch may not actually add anythi
 better than what we already have in level 2 support, and it's clear that the fetch API
 is not done evolving.  I'm increasingly coming to the view that the safe way forward for
 now is to ignore fetch and keep using XMLHttpRequest, unless it starts being phased out.
+I am also feeling misgivings about supporting a separate code path for using the HTML
+responseType in XHR... is there any actual benefit?  Let's just use a single path that
+imports HTML as text.
 
 Another thing I see as of 2018 is that we want an alternate entry point that returns a
 promise instead of taking callbacks.  Make sure it works with "await".
