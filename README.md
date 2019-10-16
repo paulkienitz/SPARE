@@ -113,7 +113,7 @@ Another gotcha to be aware of with `simulateNavigation` is that URLs pushed into
 
 --------
 
-The third method is **`SPARE.onPopStateRestore`**.  It is exactly like the `myPopStateHandler` example given above.  If you’re using `simulateNavigation` and don’t need anything fancier than that example, then you can just add one line such as `window.onpopstate = SPARE.onPopStateRestore;` and be ready to go.  There is no need to call this method directly.
+The third method is **`SPARE.onPopStateRestore`**.  It is exactly like the `myPopStateHandler` example given above.  If you’re using `simulateNavigation` and don’t need anything fancier than that example, then you can just add one line such as `window.onpopstate = SPARE.onPopStateRestore;` and be ready to go.  There is no need to call this method directly, unless you are invoking it from a wrapper function so that you can perform additional actions in response to the popstate event.
 
 --------
 
