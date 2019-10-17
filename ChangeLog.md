@@ -8,7 +8,7 @@
 
 3. Deprecated, but did not remove, the `transitionalContentID` parameter of the `replaceContent` method.  The API remains compatible with SPARE 1.  (The API of SPARE 3 will be incompatible.)
 
-4. Added new API entry points `simulateNavigation` and `canSimulateNavigation`.
+4. Added new API entry points `simulateNavigation` and `canSimulateNavigation`, and available event handler `onPopStateRestore`.
 
 5. Added support for `FormData` and `URLSearchParams` objects being passed as `postData`, where release 1 only supported strings.
 
