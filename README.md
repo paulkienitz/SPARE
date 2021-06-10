@@ -2,7 +2,7 @@
 ### Static Page AJAX to Replace Elements — a lightweight client-side library
 
 - *Release 1 was on March 24, 2015, under the terms of the Apache 2.0 license.*
-- *Release 2 is on October 16, 2019 — same terms.*
+- *Release 2 is on October 16, 2019 — same terms.  Changes: added simulateNavigation, dropped IE 7 suppport, simplified internals.*
 
 SPARE is a small client-side AJAX framework which requires no server-side support.  In fact, the case it’s optimized for is when the server provides only plain static HTML pages.  It’s also super easy to use: you only need to call one method.
 
@@ -94,7 +94,7 @@ This event handler can be set by going `window.onpopstate = myPopStateHandler;` 
 
 > **`title`**: the title shown on the page’s window or tab (taken from `newTitle`).
 
-At the time your handler function is called, the browser will have restored the URL to the address bar, and in some browsers will have restored the title, but it will *not* have changed any of the content visible on the page.  Your handler needs to do this.  The simplest way is to reload the old URL, but you will probably want to simulate this with `replaceContent`.  Make sure you only do this if the `state` property of the event parameter contains the object just described.  Here is a simple example.  (If reloadContent fails in this example, it will fall back by navigating to the old URL, which is what you want in this scenario.)
+At the time your handler function is called, the browser will have restored the URL to the address bar, and in some browsers will have restored the title, but it will *not* have changed any of the content visible on the page.  Your handler needs to do this.  The simplest way is to reload the old URL, but you will probably want to simulate this with `replaceContent`.  Make sure you only do this if the `state` property of the event parameter contains the object just described.  Here is a simple example.  (If reloadContent fails in this example, it will fall back by navigating to the old URL, which is what you want in this scenario.)  If this example is sufficient for your needs, then you can just use the provided `SPARE.onPopStateHandler` instead of writing it out yourself — see below.
 
 ```
 function myPopStateHandler(event)
@@ -106,8 +106,6 @@ function myPopStateHandler(event)
     }
 }
 ```
-
-Depending on your needs, this may be sufficient as is, or you may want further elaboration.  If you don’t need more, a function like this is provided in SPARE, ready to use.  See below.
 
 Another gotcha to be aware of with `simulateNavigation` is that URLs pushed into the history affect what directory is “current” for relative URLs.  Unless all pages are in the same directory, it’s safer to always use root-relative or absolute URLs.  I recommend root-relative URLs, because browser security does not permit us to simulate navigation to any other domains.
 
@@ -137,7 +135,7 @@ What about support level 3?  The reason that SPARE version 1 had a separate leve
 
 --------
 
-Savvy readers may note that in the most modern browsers, XHR is somewhat obsolete, replaced by the `fetch` API.  I expect that some future version of SPARE will switch over to using `fetch`.  That version will no longer use `onSuccess` and `onFailure` callback parameters, but instead will return a `Promise` object, which will allow you to handle success with a `then` method (or let you use an `await` expression) and failure with a `catch` method.
+Savvy readers may note that in the most modern browsers, XHR is somewhat obsolete, replaced by the `fetch` API.  I expect that some future version of SPARE will switch over to using `fetch`.  That version will no longer use `onSuccess` and `onFailure` callback parameters, but instead will return a `Promise` object, which will allow you to handle success with a `then` method (or let you use an `await` expression) and failure with a `catch` method.  With the callback hooks gone, the two main methods have only five parameters instead of eight.
 
 In fact, three future versions of SPARE have already been drafted.  One returns a `Promise` but is still based on XHR; a second uses `fetch`, and the third also uses `fetch` but is implemented as an ECMAScript 6 module.  All three are compatible with each other at the API level, but are incompatible with SPARE versions 1 and 2.  These represent successive steps of abandoning support for older browsers.   `Promise` support got going in 2014 and came to Edge 12 in 2015 (with polyfills available to stretch that further back).  Then `fetch` came to Edge 14 in 2016 after getting established elsewhere in 2015 (the `AbortController` class needed for efficient timeouts didn’t come to Chrome until 2018, but we can manage without it).  Finally, modules came to the majority of browsers in 2017.
 
