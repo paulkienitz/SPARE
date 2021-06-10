@@ -2,7 +2,7 @@
 ### Static Page AJAX to Replace Elements — a lightweight client-side library
 
 - *Release 1 was on March 24, 2015, under the terms of the Apache 2.0 license.*
-- *Release 2 is on October 16, 2019 — same terms.  Changes: added simulateNavigation, dropped IE 7 suppport, simplified internals.*
+- *Release 2 is on October 16, 2019 — same terms.  Adds simulateNavigation.*
 
 SPARE is a small client-side AJAX framework which requires no server-side support.  In fact, the case it’s optimized for is when the server provides only plain static HTML pages.  It’s also super easy to use: you only need to call one method.
 
