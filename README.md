@@ -97,7 +97,7 @@ This event handler can be set by going `window.onpopstate = myPopStateHandler;` 
 
 > **`title`**: the title shown on the page’s window or tab (taken from `newTitle`).
 
-> **`showUrl`**: the URL shown in the browser's address box, if different from `url` (taken from `pretendURL`).
+> **`showURL`**: the URL shown in the browser's address box, if different from `url` (taken from `pretendURL`).
 
 If the user presses the Back button on the first page loaded by `simulateNavigation`, to return to the original page as first loaded from the site, then the `state` property will not contain any of those members, but instead will have these two:
 
