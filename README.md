@@ -87,7 +87,7 @@ Also, at this time, `simulateNavigation` does not support omitting arguments bef
 
 **Important:** In order to use `simulateNavigation` effectively, you *must* set up an `popstate` event handler.  Otherwise, when the user clicks the Back button, the page content will not change!
 
-This event handler can be set by going `window.onpopstate = myPopStateHandler;` or `window.addEventListener('popstate', myPopStateHandler);`.  The handler function takes a single parameter, which will be an object with a property called `state`.  This `state` property will be null when returning to a page that the user actually navigated away from, but when returning from simulated navigation done by SPARE, the property will contain an object with four members:
+This event handler can be set by going `window.onpopstate = myPopStateHandler;` or `window.addEventListener('popstate', myPopStateHandler);`.  The handler function takes a single parameter, which will be an object with a property called `state`.  This `state` property will be null when returning to a page that the user actually navigated away from, but when returning from simulated navigation done by SPARE, the property will contain an object with five members:
 
 > **`oldId`**: the ID of the document element whose contents were replaced (taken from `elementID`),
 
@@ -99,7 +99,7 @@ This event handler can be set by going `window.onpopstate = myPopStateHandler;` 
 
 > **`showUrl`**: the URL shown in the browser's address box, if different from `url` (taken from `pretendURL`).
 
-If the user presses the Back button on the first page loaded by `simulateNavigation`, to return to the original page as first loaded from the site, then the `state` property will not contain any of those members, but instead will have these:
+If the user presses the Back button on the first page loaded by `simulateNavigation`, to return to the original page as first loaded from the site, then the `state` property will not contain any of those members, but instead will have these two:
 
 > **`startURL`**: the URL of the original page before `simulateNavigation` updated it.
 
