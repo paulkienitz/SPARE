@@ -8,7 +8,7 @@
 
 3. Dropped support for the `transitionalContentID` feature.  The parameter and property ate still present for API compatibility, but are now ignored.  (The API of SPARE 4 will be incompatible.)
 
-4. Dropped support for IE 8 and 9, and any browser version older than about 2011.  This further simplifies the implementation by removing fallback code paths.  There are no longer any browsers where `supportLevel` is nonzero but `canSimulateNavigation` is false.
+4. Dropped support for IE 8 and 9, and any browser version older than about 2011.  This further simplifies the implementation by removing fallback code paths, and reduces startup cost.  There are no longer any browsers where `supportLevel` is nonzero but `canSimulateNavigation` is false.
 
 5. It now accepts HTTP result codes of 201 and 203 as well as 200.
 
