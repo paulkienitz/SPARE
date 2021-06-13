@@ -2,7 +2,8 @@
 ### Static Page AJAX to Replace Elements — a lightweight client-side library
 
 - *Release 1 was on March 24, 2015, under the terms of the Apache 2.0 license.*
-- *Release 2 is on October 16, 2019 — same terms.  Adds simulateNavigation.*
+- *Release 2 was on October 16, 2019 — same terms.  Added simulateNavigation.*
+- *Release 3 was on June 12, 2021 — same terms.  Improved simulateNavigation.*
 
 SPARE is a small client-side AJAX framework which requires no server-side support.  In fact, the case it’s optimized for is when the server provides only plain static HTML pages.  It’s also super easy to use: you only need to call one method.
 
@@ -42,7 +43,7 @@ The main method you’ll use is **`SPARE.replaceContent`**, which takes the foll
 
 >> 0 is also possible, with empty or meaningless text.  Requests do sometimes fail with no explanation available.  This can happen, for instance, when making a forbidden cross-site request.
 
-> **`transitionalContentID`** \[DEPRECATED\]: the DOM ID of an element in your document (normally one which is hidden from view) which contains some sort of placeholder content to be displayed while waiting for the new material to download.  That element’s content is copied into the target element before the download starts, and is replaced in turn when it completes.  If left undefined, the default behavior is to leave the original content in place while downloading.  *Note* that once the original content is replaced, it is not recoverable if the request fails!  For this reason, we recommend that this feature be avoided.  It was a bad idea, and it will definitely be removed in the next version of SPARE.  You can set a default value globally by assigning the ID string to the global variable **`SPARE.transitionalContentID`**.
+> **`transitionalContentID`** \[IGNORED\]: a legacy parameter that no longer does anything, and is present only to retain API compatibility with earlier releases.  The global variable **`SPARE.transitionalContentID`** is also ignored.
 
 > **`timeout`**: a number.  If the new data doesn’t download within this many seconds, the operation fails.  The supported range is from 0 to 3600, and the default is to leave it up to the browser.  Fractional values such as 1.25 are supported.  You can set a different default globally by putting a number in the global variable **`SPARE.timeout`**.  If the time expires, `onFailure` will be called with error code 408 (Request Timeout), with the error message being "SPARE time limit exceeded" instead of "Request Timeout".  (All internal messages to `onFailure` start with the word "SPARE".)  *Note* that setting a large value does not guarantee that the browser won’t fail the operation sooner.
 
@@ -60,7 +61,7 @@ replaceContent(elementID, pageURL, newElementID, postData, callbackContextData, 
 
 The second method is **`SPARE.simulateNavigation`**.  This works like `replaceContent` but has the additional effect of adding a history item under the browser’s Back button, and changing the URL visible in the browser’s address box.  This method is intended for a fairly strict and narrow case: when you replace part of a page’s content but wish to behave as if the entire page was replaced.  This makes sense if you have many pages that fit a common template.  The result of loading the partial page from the given URL should look the same as navigating to that page (only smoother); otherwise, using this method may be inappropriate, and produce results that are confusing to the page visitor.  *Note* that due to browser security, navigation between different domains will not work with `simulateNavigation`; all pages must be within a single website.
 
-The parameters of `simulateNavigation` mostly have the same meanings that they do when used with `replaceContent`.  Only the final parameter, `newTitle`, is unique to `simulateNavigation`:
+The parameters of `simulateNavigation` mostly have the same meanings that they do when used with `replaceContent`.  Only the final two parameters, `newTitle` and `pretendURL`, are unique to `simulateNavigation`.  The latter is new in release 03.  The full list of parameters is:
 
 > **`elementID`** (required): the ID of the existing HTML element which will have its contents replaced.
 
@@ -78,7 +79,9 @@ The parameters of `simulateNavigation` mostly have the same meanings that they d
 
 > **`newTitle`**: a string which, if not blank, changes the title shown by the browser on the window or tab containing this page.
 
-Note that this method does not have the `postData` or `transitionalContentID` parameters that `replaceContent` offers.  Those features are not supported by this method.  We could in theory add `postData`, but the range of data that could be supplied to it may be sharply restricted, and it may not be possible to accurately pretest whether a post parameter will avoid causing exceptions later.
+> **`pretendURL`**: a string which, if not blank, is shown in the address bar, and saved in the Back-button history, instead of the `pageURL` value where the content actually comes from.
+
+Note that this method does not have the `postData` or `transitionalContentID` parameters that `replaceContent` offers.  Those features are not supported by this method.  We could in theory add `postData`, but it would be risky: the range of data that could be supplied to it may be sharply restricted, and it may not be possible to accurately pretest whether a post parameter will avoid causing exceptions later.
 
 Also, at this time, `simulateNavigation` does not support omitting arguments before `timeout` the way that `replaceContent` does.
 
@@ -88,24 +91,39 @@ This event handler can be set by going `window.onpopstate = myPopStateHandler;` 
 
 > **`oldId`**: the ID of the document element whose contents were replaced (taken from `elementID`),
 
-> **`url`**: the URL to which `simulateNavigation` navigated (taken from `pageURL`),
+> **`url`**: the URL from which `simulateNavigation` loaded content (taken from `pageURL`),
 
 > **`newId`**: the ID of the element extracted from that URL (taken from `newElementID`),
 
 > **`title`**: the title shown on the page’s window or tab (taken from `newTitle`).
 
-At the time your handler function is called, the browser will have restored the URL to the address bar, and in some browsers will have restored the title, but it will *not* have changed any of the content visible on the page.  Your handler needs to do this.  The simplest way is to reload the old URL, but you will probably want to simulate this with `replaceContent`.  Make sure you only do this if the `state` property of the event parameter contains the object just described.  Here is a simple example.  (If reloadContent fails in this example, it will fall back by navigating to the old URL, which is what you want in this scenario.)  If this example is sufficient for your needs, then you can just use the provided `SPARE.onPopStateHandler` instead of writing it out yourself — see below.
+> **`showUrl`**: the URL shown in the browser's address box, if different from `url` (taken from `pretendURL`).
+
+If the user presses the Back button on the first page loaded by `simulateNavigation`, to return to the original page as first loaded from the site, then the `state` property will not contain any of those members, but instead will have these:
+
+> **`startURL`**: the URL of the original page before `simulateNavigation` updated it.
+
+> **`startTitle`**: the title that was shown on the window or tab for that original page.
+
+If the user presses Back under other conditions, such as between two pages that did not use `simulateNavigation` at all, then you can expect the `state` property to be null.
+
+At the time your handler function is called, the browser will have restored the URL to the address bar, but it will *not* have changed any of the content visible on the page, or the title.  Your handler needs to do this.  The simplest way is to reload the old URL, but you will probably want to simulate this with `replaceContent`.  Make sure you only do this if the `state` property of the event parameter contains the object just described.  Here is a simple example.  (If `replaceContent` fails in this example, it will fall back by navigating to the old URL, which is usually what you want in this scenario.)  If this example is sufficient for your needs, then you can just use the provided `SPARE.onPopStateHandler` instead of writing it out yourself — see below.
 
 ```
 function myPopStateHandler(event)
 {
-    if (event.state && "url" in event.state)
-    {
-        SPARE.replaceContent(event.state.oldId, event.state.url, event.state.newId);
-        document.title = event.state.title;           // just in case browser didn't do this
-    }
+    if ("state" in event && event.state)
+        if ("url" in event.state && "oldId" in event.state)
+        {
+            SPARE.replaceContent(event.state.oldId, event.state.url, event.state.newId);
+            document.title = event.state.title;
+        }
+        else if ("startURL" in event.state)
+            location.replace(event.state.startURL);   // refresh
 }
 ```
+
+If extending this functionality, don’t forget that there is also a Forward button, and dropdowns to go back or forward nonsequentially.  For instance, trying to handle the `startURL` case with `replaceContent` may yield unexpected results if they used Forward.
 
 Another gotcha to be aware of with `simulateNavigation` is that URLs pushed into the history affect what directory is “current” for relative URLs.  Unless all pages are in the same directory, it’s safer to always use root-relative or absolute URLs.  I recommend root-relative URLs, because browser security does not permit us to simulate navigation to any other domains.
 
@@ -115,7 +133,7 @@ The third method is **`SPARE.onPopStateRestore`**.  It is exactly like the `myPo
 
 --------
 
-The fourth method is **`SPARE.canSimulateNavigation`**.  This takes no parameters and returns a boolean value.  If it returns false, `simulateNavigation` is not supported by your browser, and cannot be used — it will throw an exception.  Internet Explorer 9 and earlier are browsers for which it returns false.  If you want to use `simulateNavigation`, check this early, and provide a fallback path to do traditional whole-page navigation if `canSimulateNavigation` returns false.
+The fourth method is **`SPARE.canSimulateNavigation`**.  This takes no parameters and returns a boolean value.  If it returns false, `simulateNavigation` is not supported by your browser, and cannot be used — it will throw an exception.  Internet Explorer 9 and earlier are browsers for which it returns false, as are any browser versions older than about 2011.  If you want to use `simulateNavigation`, check this early, and provide a fallback path to do traditional whole-page navigation if `canSimulateNavigation` returns false.
 
 --------
 
@@ -125,20 +143,16 @@ The final method is **`SPARE.supportLevel`**, which takes no arguments.  It retu
 
 > **2**:  All features of `replaceContent` should be fully functional (though `simulateNavigation` might not work).
 
-> (SPARE version 1 could also return the values **1** and **3** from `supportLevel`, but these are no longer used.)
+> (SPARE release 1 could also return the values **1** and **3** from `supportLevel`, but these are no longer used.)
+
+In release 2 there were browsers which could return a nonzero value from `supportLevel` but return false from `canSimulateNavigation`.  This is no longer the case, and the two are now equivalent.
 
 **IMPORTANT**:  It is easier than you think to get into a state where your `supportLevel` value is 0 and SPARE doesn’t work.  This doesn’t just happen if your user is running something ancient like IE 6 — it will happen even in IE 11 if your page provokes IE into Compatibility View mode.  **Make sure your markup is up to snuff so IE uses Standards mode.**
 
-SPARE version 1 returned a support level of 1 for just a single supported browser: Internet Explorer 7.  We now return 0 for that browser, with IE 8 being the oldest supported version.  We continue to support IE 8 because, as the browser that shipped with Windows 7, which was the least bad version of Windows, it remains in wider use than either IE 9 or IE 10.
-
-What about support level 3?  The reason that SPARE version 1 had a separate level 3 is that it used two separate code paths depending on how fully featured a version of `XMLHttpRequest` (XHR) was in the browser.  But the alternate path turned out to be a dead end, so it was dropped.  SPARE version 2 has a single path for how it uses XHR.
-
 --------
 
-Savvy readers may note that in the most modern browsers, XHR is somewhat obsolete, replaced by the `fetch` API.  I expect that some future version of SPARE will switch over to using `fetch`.  That version will no longer use `onSuccess` and `onFailure` callback parameters, but instead will return a `Promise` object, which will allow you to handle success with a `then` method (or let you use an `await` expression) and failure with a `catch` method.  With the callback hooks gone, the two main methods have only five parameters instead of eight.
+Savvy readers may note that in the most modern browsers, XHR is somewhat obsolete, replaced by the `fetch` API.  I expect that a future version of SPARE will switch over to using `fetch`.  That version will no longer use `onSuccess` and `onFailure` callback parameters, but instead will return a `Promise` object, which will allow you to handle success with a `then` method (or let you use an `await` expression) and failure with a `catch` method.  With the callback hooks gone, `replaceContent` has only five parameters instead of eight.
 
-In fact, three future versions of SPARE have already been drafted.  One returns a `Promise` but is still based on XHR; a second uses `fetch`, and the third also uses `fetch` but is implemented as an ECMAScript 6 module.  All three are compatible with each other at the API level, but are incompatible with SPARE versions 1 and 2.  These represent successive steps of abandoning support for older browsers.   `Promise` support got going in 2014 and came to Edge 12 in 2015 (with polyfills available to stretch that further back).  Then `fetch` came to Edge 14 in 2016 after getting established elsewhere in 2015 (the `AbortController` class needed for efficient timeouts didn’t come to Chrome until 2018, but we can manage without it).  Finally, modules came to the majority of browsers in 2017.
+In fact, three future versions of SPARE have already been drafted.  One returns a `Promise` but is still based on XHR; a second uses `fetch`, and the third also uses `fetch` but is implemented as an ECMAScript 6 module.  All three are compatible with each other at the API level, but are incompatible with SPARE versions 1, 2, and 3.  These represent successive steps of abandoning support for older browsers.   `Promise` support got going in 2014 and came to Edge 12 in 2015 (with polyfills available to stretch that further back).  Then `fetch` came along in 2015 and reached Edge 14 in 2016 (the `AbortController` class needed for efficient timeouts didn’t come to Chrome until 2018, but we can manage without it).  Finally, modules came to the majority of browsers in 2017.
 
 In these future versions, there are no longer any `supportLevel` or `canSimulateNavigation` methods.  If the browser does not have sufficient support, then the singleton global `SPARE` object will be initialized to null.  If it’s present, then all features will work.
-
-One change to be conscious of with all promise-based versions is that it’s no longer possible for SPARE to have a default error-handling behavior.  If `replaceContent` fails in the callback-based versions and no `onFailure` callback was supplied, it would navigate the browser window to the supplied URL.  But with promises, any such error handling must be explicitly coded by you using `catch` (or equivalently, with the second parameter of `then`).  If you don’t supply such a handler, a failure will result in no change occurring onscreen.
