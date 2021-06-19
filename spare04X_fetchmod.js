@@ -5,6 +5,7 @@
 
 // TODO: Compare performance on slow devices to Spare 2 and Spare 1?
 //       INVESTIGATE unhandledrejection event.
+//       Add hook to edit downloaded text as string before putting it in the dom?
 //
 // TESTS: Chrome/W: good, Chrome/A: good, Firefox Q69: good, Safari 10/M: good, Safari 11/i: good,
 //        Edge 16: no URLSearchParams, Firefox 56: fails, IE11: fails as expected.
@@ -67,8 +68,9 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
     }
 
 
-    // private internal class... we have to use a traditional function-style constructor instead of an ES6 class, because we need
-    // to have internal (and preferably private) member variables visible to fetchComplete and fetchError, which get no 'this'.
+    // private internal class... we have to use a traditional function-style constructor
+    // instead of an ES6 class, because we need to have internal (and preferably private)
+    // member variables visible to fetchComplete and fetchError, which get no 'this'
     function Transaction(url, postData, timeout, newElementID, victim)
     {
         // private members -- per-transaction state is kept here
@@ -162,7 +164,7 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
 
 
     // our IIFE result: create the SPARE object accessed by the caller, but not if the browser is insufficiently modern
-    return  !("fetch" in window && "Response" in window && "Promise" in window && "catch" in Promise.prototype)
+    return  !("fetch" in window && "Response" in window && "Promise" in window && "catch" in Promise.prototype &&
               "history" in window && "pushState" in history &&
               "implementation" in document && "createHTMLDocument" in document.implementation) ? null :
             {
@@ -218,7 +220,7 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                             return p;                           // promise is ignored when used directly as event handler
                         }
                         else if ("startURL" in event.state)
-                            location.replace(event.state.startURL);   // refresh needed
+                            location.replace(event.state.startURL);   // refresh
                 }
             };      // the object literal that will be assigned to the SPARE singleton
 }();
