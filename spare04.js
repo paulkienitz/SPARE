@@ -336,6 +336,7 @@ var SPARE = function ()	   // IIFE returns the SPARE singleton object
                                         "\nPretend URL:  " + event.state.pretendURL + "\nInitial URL:  " + event.state.startURL +
                                         "\n*Actual URL:  " + location.href + "\n- Target ID:  " + event.state.targetID);
                             location.replace(event.state.startURL);
+                            return false;
                         }
                         else if ("contentURL" in event.state)      // we are recreating a simulated non-original page state
                         {
