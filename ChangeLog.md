@@ -22,7 +22,7 @@
 
 2. When a popstate handler is returned to the page from which `simulateNavigation` was first called, it now receives a different state object with properties `startURL` and `startTitle`.  (In release 2, state would be null in this case, and the page content would probably fail to restore.)  The default handler `onPopStateRestore` now reloads the page from `startURL`.
 
-3. Dropped support for the `transitionalContentID` feature.  The parameter and property are still present for API compatibility, but are now ignored.  (The API of SPARE 4 will be incompatible.)
+3. Dropped support for the `transitionalContentID` feature.  The parameter and property are still present for API compatibility, but are now ignored.  (The API of SPARE 5 will be incompatible.)
 
 4. Dropped support for IE 8 and 9, and any browser version older than about 2011.  This further simplifies the implementation by removing fallback code paths.  There are no longer any browsers where `supportLevel` is nonzero but `canSimulateNavigation` is false.
 
@@ -44,7 +44,7 @@
 
 7. Supported polymorphic use of `timeout` in any optional parameter position, as long as the final parameter is a number.
 
-8. Importing of downloaded HTML into document redone with better performance and fewer code paths.  This avoids a problem in release 1 where IE 9, 10, and 11 would, when asked to load a full HTML document, use content from the head as well as the body.  But *note* that though this problem is cured in IE 10 and 11, I cannot guarantee it is always mitigated in IE 9, particularly if the document you download has bad syntax.  (SPARE 3 will most likely drop support for IE 8 and 9.)
+8. Importing of downloaded HTML into document redone with better performance and fewer code paths.  This avoids a problem in release 1 where IE 9, 10, and 11 would, when asked to load a full HTML document, use content from the head as well as the body.  But *note* that though this problem is cured in IE 10 and 11, I cannot guarantee it is always mitigated in IE 9, particularly if the document you download has bad syntax.  (A future release will drop support for IE 8 and 9.)
 
 ### Release 1 - March 24, 2015
 
