@@ -7,7 +7,7 @@ All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
- 
+
     Redistributions of source code must retain the above copyright notice
     and this list of conditions, including the following disclaimer:
     This software is provided "as is" without warranty of any kind.
