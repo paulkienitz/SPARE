@@ -32,7 +32,7 @@
 
 1. Support for Internet Explorer 7 (which was very limited) dropped completely, and with it, the return value of 1 from `supportLevel`.
 
-2. Unified the XHR code paths so that only text mode is used.  Removed the return value of 3 from `supportLevel`.
+2. Unified the XHR code paths so that only text mode is used, which turned out to make SPARE a lot faster.  Removed the return value of 3 from `supportLevel`.
 
 3. Deprecated, but did not remove, the `transitionalContentID` parameter of the `replaceContent` method.  The API remains compatible with SPARE 1.
 
