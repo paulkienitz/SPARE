@@ -20,6 +20,8 @@ And if the URL you give returns a page fragment, so you don’t have to select a
 
 --------
 
+### replaceContent method
+
 The Javascript API consists of an object named **`SPARE`** with five public methods.  Note that you do not use a `new` operator to instantiate SPARE; it’s a singleton static object.
 
 The main method for general use is **`SPARE.replaceContent`**, which takes the following arguments, all of string type unless stated otherwise:
@@ -61,6 +63,8 @@ SPARE.replaceContent(target, contentURL, contentElementID, postData, callbackCon
 
 --------
 
+### simulateNavigation method
+
 The second method is **`SPARE.simulateNavigation`**.  This works like `replaceContent` but has the additional effect of adding a history item under the browser’s Back button, and changing the URL visible in the browser’s address box.  This method is intended for a fairly strict and narrow case: when you replace part of a page’s content but wish to behave as if the entire page was replaced.  This makes sense if you have many pages that fit a common template.  The result of loading the partial page from the given URL should look the same as navigating to that page (only smoother); otherwise, using this method may be inappropriate, and produce results that are confusing to the page visitor.
 
 *Note* that due to browser security, navigation between different domains will not work with `simulateNavigation`; all pages must be within a single website.  *Also note* that `simulateNavigation` does not at this time try to support use cases in which multiple sections of the page are independently updated.  Correctly implementing Back-button behavior in such cases is an order of magnitude more complex than in cases where just a single region is updated to hold various content.  I might attempt it in a future release.
@@ -96,6 +100,8 @@ One gotcha to be aware of with `simulateNavigation` is that pretend URLs pushed 
 This event handler can be set by adding a line of code, either `window.onpopstate = SPARE.onPopStateRestore;` or `window.addEventListener('popstate', SPARE.onPopStateRestore);`.  Or you can substitute your own handler function, but its primary operation should be to call the supplied one.  Releases 2 and 3 of SPARE included a simple example of a popstate handler which you could use instead of the built-in one, but these simple versions have been found to be insufficient for some use cases.
 
 --------
+
+### onPopStateRestore event handler
 
 The third method is **`SPARE.onPopStateRestore`**, the mandatory popstate handler just mentioned.  There is no need to call this method directly, unless you are invoking it from your own wrapper function which is set as the handler, so that you can perform additional actions before or after handling the popstate event.  This is mainly useful if something must be done before invoking it, or if you identify cases where a full reload or redirect should be done instead.  Note that code added after the return of `onPopStateRestore` will run *before* the content is updated, as the download is asynchronous.  If you want to invoke an action after the restoration is complete, you need to set a default `SPARE.onSuccess` handler function.  It will be called from `onPopStateRestore` with the event’s `state` object as its context parameter.  (`SPARE.onFailure` may also be called, but this is unlikely when returning to previously successful content.)  This `onSuccess` handler will be invoked for both new `simulateNavigation` calls and popstate restorations, unless you pass a different handler to `simulateNavigation`.  Passing an explicit null to disable success handling won’t work as that is falsey, meaning it will default to `SPARE.onSuccess`.  Another alternative is to listen for a content-loaded event, which is explained below.  If you are calling `onPopStateRestore` from your own handler, note that it returns a value of `true` in cases where it replaced content, and returns `undefined` if it did not.  (When used directly as an event handler these return values are ignored.)
 
@@ -133,15 +139,21 @@ NOTE:  During testing of `simulateNavigation`, an issue with Firefox was discove
 
 --------
 
+### canSimulateNavigation method
+
 The fourth method is **`SPARE.canSimulateNavigation`**.  This takes no parameters and returns a boolean value.  If it returns false, `simulateNavigation` is not supported by your browser, and cannot be used — it will throw an exception.  Internet Explorer 9 and earlier are browsers for which it returns false, as are any browser versions older than about 2011.  If you want to use `simulateNavigation`, check this early, and provide a fallback path to do traditional whole-page navigation if `canSimulateNavigation` returns false.
 
 --------
+
+### supportLevel method
 
 The fifth and final method is **`SPARE.supportLevel`**, which takes no arguments.  This is a compatibility holdover from earlier releases in which some browsers could support `replaceContent` but not `simulateNavigation`.  Since release 3, no such browsers remain.  If `simulateNavigation` is true this returns the number 2, otherwise it returns 0.  This means that if `simulateNavigation` cannot be used, then `replaceContent` can’t either.
 
 **IMPORTANT**:  It is easier than you think to get into a state where your `supportLevel` value is 0 and SPARE doesn’t work.  This doesn’t just happen if your user is running something ancient like IE 6 — it will happen in IE 11 if your page provokes IE into Compatibility View mode.  Make sure your markup is up to snuff so IE uses Standards mode.  Fortunately, like all IE-related issues, this one is now receding into the past.
 
 --------
+
+### properties
 
 Having descripbed all of the five methods, I will also put a list of the global properties together in one place here.  All have been already described in greater detail above.  They are:
 
@@ -158,6 +170,8 @@ Having descripbed all of the five methods, I will also put a list of the global 
 All are originally initialized to a value of `undefined`, except `simulateDCL` which is initially set to `false`.  They all affect all three methods, `replaceContent`, `simulateNavigation`, and `onPopStateRestore`, except that `replaceContent` does not fire the event configured by `simulateDCL`.  NOTE that this means that restoring content with the Back button can fail due to `SPARE.timeout` being set, thereby causing `SPARE.onFailure` to be invoked.
 
 --------
+
+### the future
 
 SPARE is based on a technology known as XHR.  Savvy readers may note that in modern browsers, XHR is somewhat obsolete, replaced by the simpler `fetch` API.  A future version of SPARE will switch over to using `fetch`.  That version will no longer use `onSuccess` and `onFailure` callback parameters, but instead will return a `Promise` object, which will allow you to handle success with a `then` method (or let you use an `await` expression) and failure with a `catch` method.  With the callback hooks gone, `replaceContent` has only five parameters instead of nine.
 
