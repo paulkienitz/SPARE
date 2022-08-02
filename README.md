@@ -18,11 +18,11 @@ You can just as easily select content from pages not resembling the calling page
 
 And if the URL you give returns a page fragment, so you don’t have to select an element within it, that’s even simpler.  That mode works for text content that isn’t even HTML (but don’t try it with binary content, such as an image URL, or it will just look like a mess).
 
+The Javascript API consists of an object named **`SPARE`** with five public methods.  Note that you do not use a `new` operator to instantiate SPARE; it’s a singleton static object.
+
 --------
 
 ### replaceContent method
-
-The Javascript API consists of an object named **`SPARE`** with five public methods.  Note that you do not use a `new` operator to instantiate SPARE; it’s a singleton static object.
 
 The main method for general use is **`SPARE.replaceContent`**, which takes the following arguments, all of string type unless stated otherwise:
 
