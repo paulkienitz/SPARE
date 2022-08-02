@@ -4,7 +4,7 @@
 - *Release 1 was on March 24, 2015, under the terms of the Apache 2.0 license.*
 - *Release 2 was on October 16, 2019 — same terms.  Added simulateNavigation.*
 - *Release 3 was on June 12, 2021 — same terms.  Improved simulateNavigation.*
-- *Release 4 was on _ _, 2022, with a new BSD-like llicense.  Improved onPopStateRestore.*
+- *Release 4 was on _ _, 2022, with a new BSD-like license.  Improved onPopStateRestore.*
 
 SPARE is a small client-side AJAX framework which requires no server-side support.  In fact, the case it’s optimized for is when the server provides only plain static HTML content.  It’s also super easy to use: you only need to call one method.
 
