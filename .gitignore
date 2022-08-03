@@ -1,5 +1,6 @@
 spare-test*
 spare*X*.js
 es6-promise-auto.js
+spare-notes.txt
 native-promise-only.js
 promise-polyfill.js
