@@ -2,7 +2,7 @@
 
 /* Three-clause BSD-like license with simplified disclaimer and minification allowance:
 
-Copyright (c) 2015-2022 Paul M. Kienitz
+"SPARE" is Copyright (c) 2015-2022 Paul M. Kienitz
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,

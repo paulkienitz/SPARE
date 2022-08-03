@@ -4,7 +4,7 @@
 - *Release 1 was on March 24, 2015, under the terms of the Apache 2.0 license.*
 - *Release 2 was on October 16, 2019 — same terms.  Added simulateNavigation.*
 - *Release 3 was on June 12, 2021 — same terms.  Improved simulateNavigation.*
-- *Release 4 was on _ _, 2022, with a new BSD-like license.  Improved onPopStateRestore.*
+- *Release 4 was on August 3, 2022, with a new BSD-like license.  Improved onPopStateRestore.*
 
 SPARE is a small client-side AJAX framework which requires no server-side support.  In fact, the case it’s optimized for is when the server provides only plain static HTML content.  It’s also super easy to use: you only need to call one method.
 
@@ -155,7 +155,7 @@ The fifth and final method is **`SPARE.supportLevel`**, which takes no arguments
 
 ### properties
 
-Having descripbed all of the five methods, I will also put a list of the global properties together in one place here.  All have been already described in greater detail above.  They are:
+Having described all of the five methods, I will also put a list of the global properties together in one place here.  All have been already described in greater detail above.  They are:
 
 > **`SPARE.timeout`**: the upper limit of how long a request is allowed to wait for content, if no explicit `timeout` value is passed as a parameter.
 
@@ -177,6 +177,8 @@ SPARE is based on a technology known as XHR.  Savvy readers may note that in mod
 
 In fact, three future versions of SPARE were drafted.  One returned a `Promise` but was still based on XHR; a second used `fetch`, and the third also used `fetch` but was implemented as an ECMAScript 6 module, so that it no longer had to restrict itself to ECMAScript 3 syntax.  All three were compatible with each other at the API level, but incompatible with SPARE versions 1 through 4.  These represented successive steps of abandoning support for older browsers.   `Promise` support got going in 2014 and came to Edge 12 in 2015 (with polyfills available to stretch that back to IE).  Then `fetch` came along in 2015 and reached Edge 14 in 2016 (the `AbortController` class needed for efficient timeouts didn’t come to Chrome until 2018, but we can manage without it).  Finally, modules came to the majority of browsers in 2017.
 
-Eventually, I made a tentative decision to skip the partial upgrades and go directly to the module format for the new version, as in recent years legacy browsers have become much less prevalent.  But then I saw that unfortunately there are still some mildly popular mobile browsers that don’t support modules, such as UC, Baidu, and the KaiOS browser, so this might have to be reconsidered; we might need to support both module and non-module versions of the fetch-based API.  I’m aware of just one current browser that doesn’t yet support fetch: Opera Mini.  So the Promise-with-XHR version will definitely be skipped.
+At one point, I had made a tentative decision to skip the partial upgrades and go directly to the module format for the new version, as in recent years legacy browsers have become much less prevalent.  But then I saw that unfortunately there are still some mildly popular mobile browsers that don’t support modules, such as UC, Baidu, and the KaiOS browser, so I backed off of that.  The next version will be the non-module one based on Fetch.  Converting it to a module doesn't change much, and doesn't bring much benefit.
+
+I’m aware of just one current browser that doesn’t yet support fetch: Opera Mini.  I don't test with that.  I think I will still do some testing with Internet Explorer 11 using polyfills.  My experience so far with Promise polyfills is that they work fine.
 
 In this new incompatible API, there are no longer any `supportLevel` or `canSimulateNavigation` methods.  If the browser does not have sufficient support, then the singleton global `SPARE` object will be initialized to null.  If the object is present, then all features will work.

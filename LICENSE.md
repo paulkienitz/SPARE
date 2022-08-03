@@ -1,6 +1,6 @@
 Three-clause BSD-like license with simplified disclaimer and minification allowance:
 
-Copyright (c) 2015-2022 Paul M. Kienitz  
+"SPARE" is Copyright (c) 2015-2022 Paul M. Kienitz  
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -10,3 +10,5 @@ Redistribution and use in source and binary forms, with or without modification,
 2. Redistributions in binary form must reproduce the above copyright notice and this list of conditions in the documentation and/or other materials provided with the distribution.  If the binary is incorporated into a work by URI reference, then this license may be referenced from the binary (e.g. minified script) via URI, provided such reference is immediately legible.
 
 3. The name of Paul Kienitz may not be used to endorse or promote products derived from this software without specific prior written permission.
+
+*(Releases 1, 2, and 3 of SPARE were under a less permissive Apache license.  This new license now applies to these historical versions.)*

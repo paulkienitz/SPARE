@@ -1,6 +1,6 @@
 # SPARE Change Log
 
-### Release 4 - ? ??, 2022
+### Release 4 - August 3, 2022
 
 1. Refactored the code to reduce repetition and bring the architecture closer to what will work in the future Promise-based version.
 
@@ -8,9 +8,9 @@
 
 3. Added a feature to `simulateNavigation` and `onPopStateRestore` so they can simulate the `DOMContentLoaded` event.  This is activated by setting the new global property `SPARE.simulateDCL` to true.  If false it instead fires a new event called `SPAREContentLoaded`.
 
-3. Improved `onPopStateRestore` to better handle returns to initially loaded pages, so that it can just replace the updated element with original content instead of reloading the whole page.  Added a safety check to it for cases where the history has somehow gotten out of sync.  (This may not be necessary.)  Gave `onPopStateRestore` a return value of `true` when it replaces content.  But clarified that `onPopStateRestore` is not yet ready for handling cases where multiple targets are updated, and it can’t be expected to correctly restore such documents.  The prior flaws in `onPopStateRestore` are the whole reason why I did an additional release of the old API.
+3. Improved `onPopStateRestore` to better handle returns to initially loaded pages, so that it can just replace the updated element with original content instead of reloading the whole page.  Added a safety check to it for cases where the history has somehow gotten out of sync.  (This may not be necessary.)  Gave `onPopStateRestore` a return value of `true` when it replaces content.  But clarified that `onPopStateRestore` is not yet ready for handling cases where multiple targets are updated, and it can’t be expected to correctly restore such documents.  The prior flaws in `onPopStateRestore` are the whole reason why I did an additional release of the old API — I couldn't leave release 3 as the only option for legacy users.
 
-4. Updated the `state` object saved in browser history to use new renamed properties consistent with parameter naming elsewhere: `targetID` instead of `oldId`, `contentURL` instead of `url`, `contentElementID` instead of `newId`, `newTitle` instead of `title`, and `pretendURL` instead of `showURL`.  However, the poorly chosen old names are also still present for compatibility, until we transition to the new Promise-based API.  Also, `newTitle` and `pretendURL` are now present unconditionally, instead of only when returning to an originally loaded page.
+4. Updated the `state` object saved in browser history to use new renamed properties consistent with parameter naming elsewhere: `targetID` instead of `oldId`, `contentURL` instead of `url`, `contentElementID` instead of `newId`, `newTitle` instead of `title`, and `pretendURL` instead of `showURL`.  However, the poorly chosen old names are also still present for compatibility, until we transition to the new Promise-based API.  Also, `newTitle` and `pretendURL` and `targetID` are now present unconditionally.
 
 5. Because HTTP 2 no longer includes a text description with its response status, such as "Not Found" for 404, SPARE 4 now substitutes a generic text such as "HTTP status 404" if none was received.
 
