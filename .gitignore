@@ -1,0 +1,5 @@
+spare-test*
+spare*X*.js
+es6-promise-auto.js
+native-promise-only.js
+promise-polyfill.js
