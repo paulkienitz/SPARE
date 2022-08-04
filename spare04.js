@@ -185,9 +185,9 @@ var SPARE = function ()	   // IIFE returns the SPARE singleton object
         // private methods
         var abortBecauseTimeout = function ()
         {
-            aborted = true;
             if (xmlhttp && xmlhttp.readyState < 4)
             {
+                aborted = true;
                 try { xmlhttp.abort(); } catch (e) { }
                 reactor.fail(408, "SPARE time limit exceeded");
             }
