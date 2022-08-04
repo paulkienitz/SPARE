@@ -25,7 +25,7 @@ are permitted provided that the following conditions are met:
 
 // In this version we embrace modern features.  We ignore XHR in favor of fetch, and are an ES6 module.
 // Browsers have to be pretty up-to-date to support this version, like 2018 or newer.
-// This might be released simultaneously with a compatible non-module version, as a fallback for those
+// This would be released simultaneously with a compatible non-module version, as a fallback for those
 // who want to support browsers that can't load modules, which includes some modern mobile browsers.
 // That should work pretty far back if Fetch and Promise are polyfilled.
 
@@ -156,18 +156,13 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
     function Retriever(contentURL, postData, timeout, contentElementID, victim)
     {
         // private members -- per-transaction state is kept here
-        var parentResolve = null;
-        var parentReject = null;
         var aborted = false;
         var timer = null;
         var fetchAborter = canUseAbortController ? new AbortController() : null;
 
         // our one internally public method
-        // XXX can it just return the promise created by fetch()?  Yes, have the outer promise call resolve(start()).
-        this.start = function (resolve, reject)
+        this.start = function ()
         {
-            parentResolve = resolve;
-            parentReject = reject;
             let params;
             if (typeof postData === "string" || (postData !== null && typeof postData === "object"))
             {
@@ -175,15 +170,15 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                            body:    postData };
                 if (typeof postData === "string")    // other parameter types set the header automatically
                     params.headers = { "Content-type": "application/x-www-form-urlencoded" };
-                // XXX maybe set postData AFTER header?
             }
             else
                 params = { method: "GET" };
             if (fetchAborter)
                 params.signal = fetchAborter.signal;
-            fetch(contentURL, params).then(fetchComplete).catch(fetchError);
+            let promise = fetch(contentURL, params).then(fetchComplete).catch(fetchError);
             if (timeout)
                 timer = setTimeout(abortBecauseTimeout, timeout * 1000);
+            return promise;
         };
 
         // private methods
@@ -192,7 +187,7 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
             aborted = true;
             if (fetchAborter)
                 fetchAborter.abort();       // should halt HTTP session; in aborterless browsers, it continues silently in background
-            downloadFailed(408, "SPARE time limit exceeded");         // will have no effect if promise already resolved
+            downloadFailed(408, "SPARE time limit exceeded");
         }
 
         function fetchComplete(response)
@@ -201,7 +196,7 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
             {
                 clearTimeout(timer);
                 if (response.status == 200 || response.status == 201 || response.status == 203)
-                    downloadSucceeded(response);
+                    return downloadSucceeded(response);    // this is the only path that doesn't throw
                 else
                     downloadFailed(response.status, response.statusText);
             }
@@ -214,7 +209,7 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                 clearTimeout(timer);
                 if ("name" in reason && "message" in reason)
                     downloadFailed(-2, `SPARE (during fetch) caught exception ${reason.name}: ${reason.message}`, reason);
-                else                         // can this ever happen?
+                else                         // should not happen?
                     downloadFailed(-4, `SPARE failed with reason ${reason}`);
             }
         }
@@ -223,18 +218,16 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
         {
             try
             {
-                response.text().catch(fetchError)
-                               .then(responseText =>
-                                     {
-                                         var err = extractAndUse(responseText, contentElementID, victim);
-                                         if (err)
-                                             downloadFailed(-1, err);
-                                     })
-                               .then(parentResolve);
-                // XXX pass something to parentResolve, such as victim?
-                // XXX move parentResolve OUTSIDE of try/catch, or remove try/catch.
+                var extractor = function (responseText)
+                {
+                    var err = extractAndUse(responseText, contentElementID, victim);
+                    if (err)
+                        downloadFailed(-1, err);
+                    return victim;
+                };
+                return response.text().then(extractor).catch(fetchError);
             }
-            catch (e)
+            catch (e)    // unlikely
             {
                 downloadFailed(-3, `SPARE (during extraction) caught exception ${e.name}: ${e.message}`, e);
             }
@@ -242,10 +235,14 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
 
         function downloadFailed(errorNumber, errorText, exception)
         {
-            parentReject(makeError(exception, contentURL, errorNumber, errorText));
+            throw makeError(exception, contentURL, errorNumber, errorText);
         }
     }       // class Retriever
 
+
+    // load-time initialization -- validate that we have browser support, and save initial location
+    var supported = "fetch" in window && "Response" in window && "Promise" in window && "catch" in Promise.prototype;
+    // minimum browser versions are from 2015-16: Edge 16, Firefox 60, Chrome 61, Safari 11
 
     if (!initialURL)
     {
@@ -254,84 +251,89 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
     }
 
     // our IIFE result: create the SPARE object accessed by the caller, or set it null if the browser is lacking
-    return  !("fetch" in window && "Response" in window && "Promise" in window && "catch" in Promise.prototype &&
-              "history" in window && "pushState" in history &&
-              "implementation" in document && "createHTMLDocument" in document.implementation) ? null :
+    var spare = !supported ? null :
+    {
+        // global defaulting values settable by the caller
+        timeout: undefined,
+        simulateDCL: false,
+        // XXX add global then-handler here?  or one just for onPopStateRestore?
+
+        // Our core method - see https://github.com/paulkienitz/SPARE/blob/master/README.md for how to use.
+        // Note that if you have ES8, going "await SPARE.replaceContent(...)" is an alternative to using .then().
+        replaceContent(target /*ID or DOM element*/, contentURL, contentElementID, timeout, postData)
+        {
+            return new Promise((resolve, reject) =>
             {
-                // global defaulting values settable by the caller
-                timeout: undefined,
-                simulateDCL: false,
-                // XXX add global then-handler here?  or one just for onPopStateRestore?
+                var victim = validate(target, contentURL);     // throws (which Promise turns into rejection) if no victim
+                // Unlike SPARE 2-4, we do not support parsing the timeout parameter early when the last value passed in is a number.
+                timeout = normalizeTimeout(timeout, SPARE.timeout);
+                var retriever = new Retriever(contentURL, postData, timeout, contentElementID, victim);
+                resolve(retriever.start());
+            });
+        },
 
-                // Our core method - see https://github.com/paulkienitz/SPARE/blob/master/README.md for how to use.
-                // Note that if you have ES8, going "await SPARE.replaceContent(...)" is an alternative to using .then().
-                replaceContent(target /*ID or DOM element*/, contentURL, contentElementID, timeout, postData)
+        // Like replaceContent but also sets history and title.  No postData support.
+        // HANDLER IS REQUIRED for popstate!  No cross-domain contentURL values are allowed
+        // due to browser security.  Root-relative URLs are recommended.
+        simulateNavigation(target, contentURL, contentElementID, timeout, newTitle, pretendURL)
+        {
+            var historyAdder, eventFirer, retriever;
+            return new Promise(function (resolve, reject)
+            {
+                var victim = validate(target, contentURL);     // throws (which Promise turns into rejection) if no victim
+                timeout = normalizeTimeout(timeout, SPARE.timeout);
+                eventFirer = new EventFirer(SPARE.simulateDCL);
+                historyAdder = new HistoryAdder(victim.id, contentURL, contentElementID, newTitle, pretendURL);
+                historyAdder.checkBehind();
+
+                retriever = new Retriever(contentURL, null, timeout, contentElementID, victim);
+                resolve(retriever.start());
+            }).then(historyAdder.add)
+              .then(eventFirer.fire);
+        },
+
+        // This is a default handler for the popstate event, which can
+        // be used with simulateNavigation if nothing fancier is needed, or
+        // called by an extended handler to provide the core functionality.
+        onPopStateRestore(event)
+        {
+            let ourPromise = undefined;
+            if ("state" in event && event.state && "targetID" in event.state && "startURL" in event.state)
+            {
+                let eventFirer = new EventFirer(SPARE.simulateDCL);
+                let victim = document.getElementById(event.state.targetID);
+                // XXX Is this check unnecessary??
+                if (!victim || location.href != (event.state.pretendURL || event.state.startURL))   // shouldn't happen
                 {
-                    return new Promise((resolve, reject) =>
-                    {
-                        var victim = validate(target, contentURL);     // throws (which Promise turns into rejection) if no victim
-                        // Unlike SPARE 2-4, we do not support parsing the timeout parameter early when the last value passed in is a number.
-                        timeout = normalizeTimeout(timeout, SPARE.timeout);
-
-                        var retriever = new Retriever(contentURL, postData, timeout, contentElementID, victim);
-                        retriever.start(resolve, reject);
-                        // XXX is there a cleaner way to do this where start() creates the promise that is returned?
-                    });
-                },
-
-                // Like replaceContent but also sets history and title.  No postData support.
-                // HANDLER IS REQUIRED for popstate!  No cross-domain contentURL values are allowed
-                // due to browser security.  Root-relative URLs are recommended.
-                simulateNavigation(target, contentURL, contentElementID, timeout, newTitle, pretendURL)
-                {
-                    var historyAdder, eventFirer, retriever;
-                    return new Promise(function (resolve, reject)
-                    {
-                        var victim = validate(target, contentURL);     // throws (which Promise turns into rejection) if no victim
-                        timeout = normalizeTimeout(timeout, SPARE.timeout);
-                        eventFirer = new EventFirer(SPARE.simulateDCL);
-                        historyAdder = new HistoryAdder(victim.id, contentURL, contentElementID, newTitle, pretendURL);
-                        historyAdder.checkBehind();
-
-                        retriever = new Retriever(contentURL, null, timeout, contentElementID, victim);
-                        retriever.start(resolve, reject);
-                    }).then(historyAdder.add)
-                      .then(eventFirer.fire);
-                },
-
-                // This is a default handler for the popstate event, which can
-                // be used with simulateNavigation if nothing fancier is needed, or
-                // called by an extended handler to provide the core functionality.
-                onPopStateRestore(event)
-                {
-                    let ourPromise = undefined;
-                    if ("state" in event && event.state && "targetID" in event.state && "startURL" in event.state)
-                    {
-                        let eventFirer = new EventFirer(SPARE.simulateDCL);
-                        let victim = document.getElementById(event.state.targetID);
-                        if (!victim || location.href != (event.state.pretendURL || event.state.startURL))   // shouldn't happen
-                        {
-                            console.log("=== SPARE had to reload initial page because assumed URL does not match current location, or target is missing." +
-                                        "\nPretend URL:  " + event.state.pretendURL + "\nInitial URL:  " + event.state.startURL +
-                                        "\n*Actual URL:  " + location.href + "\n- Target ID:  " + event.state.targetID);
-                            location.replace(event.state.startURL);
-                        }
-                        else if ("contentURL" in event.state)      // we are recreating a simulated non-original page state
-                        {
-                            let retriever = new Retriever(event.state.contentURL, null, SPARE.timeout, event.state.contentElementID, victim);
-                            ourPromise = new Promise(function (resolve, reject) { retriever.start(resolve, reject); });
-                            document.title = event.state.title;
-                        }
-                        else                                       // we are returning to a page state as originally loaded
-                        {
-                            let retriever = new Retriever(event.state.startURL, null, SPARE.timeout, event.state.targetID, victim);
-                            ourPromise = new Promise(function (resolve, reject) { retriever.start(resolve, reject); });
-                            document.title = event.state.startTitle;
-                        }
-                    }
-                    // XXX define a global thenable you can assign to handle completion here when ourPromise is set??
-                    return ourPromise;
-                    // return value is ignored when this is used directly as the event handler
+                    console.log("=== SPARE had to reload initial page because assumed URL does not match current location, or target is missing." +
+                                "\nPretend URL:  " + event.state.pretendURL + "\nInitial URL:  " + event.state.startURL +
+                                "\n*Actual URL:  " + location.href + "\n- Target ID:  " + event.state.targetID);
+                    location.replace(event.state.startURL);
+                    // XXX what do we return here?
                 }
-            };      // the object literal that will be assigned to the SPARE singleton
+                else if ("contentURL" in event.state)      // we are recreating a simulated non-original page state
+                {
+                    ourPromise = new Promise((resolve, reject) =>
+                    {
+                        let retriever = new Retriever(event.state.contentURL, null, SPARE.timeout, event.state.contentElementID, victim);
+                        resolve(retriever.start());
+                    });
+                    document.title = event.state.title;
+                }
+                else                                       // we are returning to a page state as originally loaded
+                {
+                    ourPromise = new Promise((resolve, reject) =>
+                    {
+                        let retriever = new Retriever(event.state.startURL, null, SPARE.timeout, event.state.targetID, victim);
+                        resolve(retriever.start());
+                    });
+                    document.title = event.state.startTitle;
+                }
+            }
+            // XXX define a global function you can assign to be chained here when ourPromise is set??
+            return ourPromise;
+            // return value is ignored when this is used directly as the event handler
+        }
+    };      // the object literal that will be assigned to the global SPARE singleton
+    return spare;
 }();
