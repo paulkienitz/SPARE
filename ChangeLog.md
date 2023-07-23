@@ -18,7 +18,7 @@
 
 ### Release 3 - June 12, 2021
 
-_**NOTE:** The 2021 release of SPARE 3 has a known bug -- `window.title` instead of `document.title` in the line of `simulateNavigation` which calls `history.replaceState` -- which may cause problems if you use a global variable named `title`.
+_**NOTE:** The 2021 release of SPARE 3 has a known bug_ -- `window.title` _instead of_ `document.title` _in the line of_ `simulateNavigation` _which calls_ `history.replaceState` -- _which will cause problems if you use a global variable named_ `title`.
 
 1. Added `pretendURL` parameter to `simulateNavigation`, so that the URL shown in the address bar can differ from the one that content is loaded from.  In popstate handlers, the state object now has a `showURL` property which stores this value.
 
