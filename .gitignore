@@ -1,6 +1,4 @@
+halfhearted/native-promise-only.js
+halfhearted/promise-polyfill.js
+halfhearted/es6-promise-auto.js
 spare-test*
-spare*X*.js
-es6-promise-auto.js
-spare-notes.txt
-native-promise-only.js
-promise-polyfill.js
