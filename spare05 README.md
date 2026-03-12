@@ -140,7 +140,7 @@ Other negative values are used for unexpected failures during the page update, w
 If the server is using HTTP 2 and sent no message, SPARE may substitute a generic message such as "HTTP status ###", where ### is the httpStatus number.
 For other errors it can be any explanatory text.
 If the content is downloaded but does not contain an ID that matches `contentElementID`, it will be “SPARE could not find element '\_\_\_' in downloaded content”, where \_\_\_ is the ID you provided.
-If there is no `httpStatus` and an internal error occurs, this may be set to the name of the error class that was thrown, such as `ReferenceError`
+If there is no `httpStatus` and an internal error occurs, this may be set to the name of the error class that was thrown, such as `ReferenceError`.
 
 > `isSPARE` is set to `true`, to help identify SPARE errors if they end up in a general-purpose error handler.
 
@@ -241,7 +241,7 @@ You can simply ignore that event, and it will have no effect.
 If you are interested in responding to it, you can attach a handler function with `window.addEventListener('SPAREContentLoaded', mySpareContentLoadedHandler);`.
 The `Event` object passed to your handler has two added properties which are not present for a `DOMContentLoaded` event after normal navigation: first, the `contextData` value that you passed in, and second, a flag named `isSPARE` which is set true.
 These are also present in simulated `DOMContentLoaded` events — real ones carry no added properties, so other handlers will not be affected by the addition.
-You can tell simulated from real with `"isSPARE" in event.`.
+You can tell simulated from real with `"isSPARE" in event`.
 
 --------
 
@@ -268,7 +268,7 @@ All event handler functions you attach take a single parameter, which is an `Eve
 That object has added properties to convey the details needed to process each type of event.
 The before and after events carry a lot more detail than the content-loaded event.
 
-***************
+* * * * * * * * * * * * * * *
 
 The purpose of the `onPopStateRestore` handler is to update the page so that it matches the content it had at the time the history was stored.
 SPARE keeps an internal record of all the `simulateNavigation` updates that have been made since the page was loaded, and the history state carries a copy of that record.
