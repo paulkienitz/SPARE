@@ -6,7 +6,8 @@
 // What does Chrome do differently?  it sends if-modified-since and if-none-match headers, absent in firefox.
 // .........Wait, has Firefox now fixed itself so the bug doesn't happen anymore?
 
-// TODO: try out unhandledrejection event for a way to have pop failure do a reload.
+// TODO: set a SPARELoading CSS class on the target during the transition.
+//       try out unhandledrejection event for a way to have pop failure do a reload.
 //       send a beforePopState event, and check it for cancellation?
 //       TEST multi-target popstate support.  SET UP TESTS WITH NESTING.
 //           ...See G spreadsheet.  Run through cases, see what more is needed besides de-currenting inners.
@@ -80,7 +81,7 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
         if (name === "object")
             if (anything === null)
                 name = "null";
-            else if ("constructor" in anything && anything.constructor)
+            else if (anything.constructor)
                 name = anything.constructor.name;
         return name;
     }
@@ -112,17 +113,27 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
     }
 
 
-    function validate(target, contentURL)                   // returns target DOM element if it doesn't throw
+    function validate(target, contentURL, checkID, postData, contextData)   // returns target DOM element if it doesn't throw
     {
         if (!contentURL || typeof contentURL !== "string")      // allow URL object?
             throw makeError("SPARE - contentURL string is required", contentURL);
         if (target instanceof HTMLElement)
+        {
+            if (checkID && !target.id)
+                throw makeError("SPARE - target has no ID", contentURL);
             return target;
+        }
         if (!target)
             throw makeError("SPARE - target ID or object is required", contentURL);
         let victim = document.getElementById(target);
         if (!victim)
             throw makeError(`SPARE could not find target element '${target}' in ${contentURL}`, contentURL);
+        if (postData)
+            try { structuredClone(postData); }
+            catch (ex) { throw makeError("SPARE postData is not cloneable - type " + typeName(postData), contentURL); }
+        if (contextData)
+            try { structuredClone(contextData); }
+            catch (ex) { throw makeError("SPARE contextData is not cloneable - type " + typeName(contextData), contentURL); }
         return victim;
     }
 
@@ -149,60 +160,32 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
 
 
 
-    // private internal classes and classlike features (sometimes just a factory or plain function)
+    // private internal classes and classlike features (sometimes just a factory
+    // or plain function, when the class syntactic sugar gets too salty)
 
-    // not declaring this as a true class because that would interfere with the need to be serializable
-    function Change(targetID, contentURL, contentElementID, contextData, postData)
+    // this simple object needs to be cloneable
+    function Change(targetID, contentURL, contentElementID, postData)
     {
         // Represents one instance of a page element which has been replaced by content from another source.
-        // XXX CHECK:  are there some types of postData which should be explicitly stringified or jsonified?
+        if (postData === null)
+            postData = undefined;                   // make null and undefined be ===, but not ""
         this.targetID         = targetID;
-        this.contentURL       = contentURL;
-        this.contentElementID = contentElementID || "";
-        this.contextData      = contextData;                // MUST be serializable!
-        this.postData         = postData;                   // MUST be serializable!  DO NOT use FormData!
+        this.contentURL       = contentURL;                 // XXX TODO: CONVERT TO ABSOLUTE??
+        this.contentElementID = contentElementID || null;
+        this.postData         = postData;                   // MUST be cloneable!
         this.containedBy      = null;
         // don't need to save initialURL as navigating from another page will load the whole
-        // page from the history url first, resetting this script and making popstate moot
-        if (this.postData === null)
-            this.postData = undefined;                      // make null and undefined be ===, but not ""
+        // page from the history url first, resetting this script
     }
 
-    // since Change needs to be serialized, it can't have any methods, so we put them into our collection class
     class SetOfChanges
     {
         saved = new Map();
 
-        // retrieve the current Change for a given target ID
+        // retrieve the current Change for a given target ID... UNUSED?
         get(id)
         {
             return this.saved.get(id);
-        }
-
-        // update or add the current Change for a target ID, then synchronizes affected containedBy chains
-        set(up)
-        {
-            const contains = (ancestor, child) =>
-                ancestor && child && child.containedBy &&
-                (ancestor.targetID === child.containedBy || contains(ancestor, this.saved.get(child.containedBy)));
-            // before adding the change, remove any old one which either matches or is contained by the new one,
-            // preserving correct ordering by making sure that replacements are added at the end as most-recent:
-            let existing = this.saved.get(up.targetID);
-            this.saved.values().filter(v => v === existing || contains(existing, v))
-                               .forEach(v => this.saved.delete(v.targetID));
-            this.saved.set(up.targetID, up);
-            // make a CSS selector for all IDs that are present:
-            let allIDs = Array.from(this.saved.keys(), k => '#' + k).join(', ');
-            // find if any other changes identify an element that encloses ours, picking the nearest if more than one:
-            let target = document.getElementById(up.targetID);
-            let container = target.parentElement.closest(allIDs);
-            up.containedBy = container ? container.targetID : null;
-            // we now know whose descendant we are... but whose ancestor are we?
-            for (let el of target.querySelectorAll(allIDs))
-            {
-                let itsContainer = el.parentElement.closest(allIDs);
-                this.saved.get(el.id).containedBy = itsContainer ? itsContainer.targetID : null;
-            }
         }
 
         values()
@@ -210,12 +193,42 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
             return Array.from(this.saved.values());
         }
 
+        preAdd(idToBeAdded)
+        {
+            idToBeAdded = "#" + idToBeAdded;
+            for (let c of this.saved.values())
+            {
+                let itsElement = document.getElementById(c.targetID);
+                if (itsElement ? itsElement.parentElement.closest(idToBeAdded))
+                    this.saved.get(c.targetID).willBeErasedBy = idToBeAdded;
+                // TODO: clean that up if simulateNavigation fails
+            }
+        }
+
+        // update or add the current Change for a target ID, then synchronizes affected containedBy chains
+        add(up)
+        {
+            this.saved.set(up.targetID, up);
+            // make a CSS selector for all IDs that are present:
+            let allIDs = Array.from(this.saved.keys(), k => '#' + k).join(', ');
+            // find if any other changes identify an element that encloses ours, picking the nearest if more than one:
+            let target = document.getElementById(up.targetID);
+            let container = target.parentElement.closest(allIDs);
+            up.containedBy = container ? container.targetID : null;
+            // if this now contains some old changes, those all just got erased, so forget them
+            target.querySelectorAll(allIDs).forEach(el => this.saved.delete(el.id));
+            this.saved.values().filter(c => c.willBeErasedBy === up.targetID)
+                               .forEach(d => this.saved.delete(d.targetID));
+        }
+
         // compare a list of historical changes to the current saved set, returning a new
-        // list of changes which would update the existing state to match the one passed in
+        // list of changes which would update the existing state to match the one passed in...
+        // though internally we store changes in a Map, this takes and returns simple arrays
         needToRestore(changesToRestore)
         {
             // XXX TODO: handle ids no longer existing in document (their containedBy should be informative)
             // XXX TODO: handle relative vs absolute urls -- store always as absolute?
+
             const isMismatch = other =>             // true if other (a Change) differs from what's in saved for its ID
             {
                 let curr = this.saved.get(other.targetID);
@@ -223,8 +236,26 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                        other.contentElementID !== curr.contentElementID ||
                        JSON.stringify(other.postData) !== JSON.stringify(curr.postData);    // XXX is there a better option here?
             };
+            const descendsFromID = (ancestralID, child) =>
+            {
+                if (!child || !child.containedBy)
+                    return false;
+                if (child.containedBy == ancestralID)
+                    return true;
+                let parent = this.saved.get(child.containedBy);
+                return descendsFromID(ancestralID, parent);
+            };
+            const descendsFromAny = (ancestors, child) =>
+            {
+                return ancestors.indexOf(child) < 0 &&
+                       ancestors.findIndex(a => descendsFromID(a.targetID, child)) >= 0;
+            };
             const containersFirst = (a, b) =>       // a and b are two Change objects; compare them for sorting purposes
             {
+                if (a.contentURL !== "!" && b.contentURL === "!")
+                    return -1;
+                if (b.contentURL !== "!" && a.contentURL === "!")
+                    return 1;
                 if (a.containedBy === b.targetID)
                     return -1;
                 if (b.containedBy === a.targetID)
@@ -235,6 +266,17 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                     return 1;
                 return 0;                           // don't move anything else
             };
+            const setUndoURL = (c) =>
+            {
+                let original = this.saved.get(c.targetID);
+                if (!c.containedBy && !original.containedBy)
+                    c.contentURL = initialURL;
+                else if (!c.containedBy)
+                    c.contentURL = original.contentURL;
+                else if ((original.containedBy || c.containedBy) === c.containedBy)
+                    map.delete(c);                  // the parent is already resetting it (should this never happen?)
+                // else... jeez, I don't fuckin' know...
+            };
             // Update targets where the current state disagrees with the popped state passed in, but don't update ones contained by
             // another that is also needing an update, if they came from the same URL.  If URLs differ, the container must come first.
             // This depends on a SIMPLIFYING ASSUMPTION: that a given fetch will produce the same DOM tree each time, though text may vary.
@@ -242,18 +284,31 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
             // (versions disagree, passed-in version wins)... order doesn't matter except that containers must precede their containees?
             changesToRestore = changesToRestore || [];
             let toDoOrRedo = changesToRestore.filter(isMismatch);
+            // If any element has different contents, we also need to reload all of its descendants:
+            toDoOrRedo.concat(changesToRestore.filter(c => descendsFromAny(toDoOrRedo, c)))
+                      .map(c => new Change(c.targetID, c.contentURL, c.contentElementID, c.postData));  // shallow copy for modifiability
             let toUndo = Array.from(this.saved.values().filter(v => !changesToRestore.find(u => u.targetID === v.targetID))
-                                                       .map(c => new Change(c.targetID, initialURL, c.targetID)));
-            // there are no duplicate IDs, so we can make a map, and use that to fix all the containedBys within the returned set
-            let map = new Map(toDoOrRedo.concat(toUndo).map(c => [c.targetID, c]));
+                                                       .map(c => new Change(c.targetID, /*initialURL*/ "!", c.targetID)));
+            // there are no duplicate IDs, so we can make a map, and use that to produce local containedBys within the returned set
+
+///// ******* XXX WAIT, all undos before all redos, right?  and shouldn't containedBy only apply within each half??
+            let map = new Map(toUndo.concat(toDoOrRedo).map(c => [c.targetID, c]));
             let allIDs = Array.from(map.keys(), k => '#' + k).join(', ');
             for (let c of map.values())
             {
-                let itsContainer = document.getElementById(c.targetID).parentElement.closest(allIDs);
+                let itsElement = document.getElementById(c.targetID);
+                let itsContainer = itsElement ? itsElement.parentElement.closest(allIDs) : null;
                 map.get(c.targetID).containedBy = itsContainer ? itsContainer.targetID : null;
             }
-            // now that we know the containment order, we can sort this into the correct sequence to carry them out
-            return Array.from(map.values()).sort(containersFirst);
+            // now that we know the containment order, we can figure out the undo urls
+            // === If you are undoing an inner area which is contained by an existing outer one which is
+            // not a delta, the contentURL to use is that which filled in the outer update
+            // ...If the undo is contained by another element in the delta, it can be dropped.  If it is contained
+            // by something in the current saved map that isn't in the list, use that change's url for the undo.
+            // THE TRICKY PART can be deciding which conflicting ancestry points to the nearer container.
+            let delta = Array.from(map.values()).sort(containersFirst);
+            delta.filter(c => c.contentURL === "!").forEach(setUndoURL);
+            return delta;
         }
 
         toString(change)                // mainly for debuggery
@@ -263,29 +318,29 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
     }  // class SetOfChanges
 
     // This static collection tracks all changes made by simulateNavigation, relative to the page as originally loaded.
-    // It does not include changes made by replaceContent, as the intent is to mimic navigation and reload the page as
-    // it would have come from the server.  If the page content is dynamic and added by some means other than original
-    // loading or simulateNavigation, it's up to the page to handle that dynamic content restoration via SPAREContentLoaded
-    // or whatever, before the popstate proceeds to the next replacement.
+    // It does not include changes made by replaceContent, as the intent is to mimic navigation and reload the page
+    // as it would have come from the server.  If the page content is dynamic and added by some means other than
+    // original loading or simulateNavigation, it's up to the page to handle that dynamic content restoration via
+    // a SPAREContentLoaded handler or whatever, before the popstate proceeds to the next replacement.
     const allChanges = new SetOfChanges();
 
 
 
     // History stuff doesn't work as a true class because methods can't be used as then() callbacks.
+    // XXX TODO: turn into a class with lambda methods:  add = result => { ... }; ?
     function makeHistoryAdder(targetID, contentURL, contentElementID, newTitle, pretendURL, contextData, postData)
     {
         return function (val)
         {
-            let newUpdate = new Change(targetID, contentURL, contentElementID, contextData, postData);
-            allChanges.set(newUpdate);
+            allChanges.add(new Change(targetID, contentURL, contentElementID, postData));
             let changesToSave = allChanges.values();                    // convert to dumb serializable form
             let state = { SPAREtargetID:         targetID,
                           SPAREnewTitle:         newTitle,
                           SPAREvisibleURL:       pretendURL || contentURL,
                           SPAREcontextData:      contextData,           // MUST be serializable, like postData!
-                          SPAREstartTitle:       initialTitle,
-                          SPAREstartURL:         initialURL,
-                          SPAREchanges:          changesToSave
+                          SPAREchanges:          changesToSave,
+                          SPAREinitialTitle:     initialTitle,
+                          SPAREinitialURL:       initialURL
                           // add scroll position, to be used optionally?  (Chrome might benefit, Firefox is doing fine on its own)
                         };
             history.pushState(state, "", pretendURL || contentURL);
@@ -297,10 +352,10 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
 
     function historyBackfill(targetID, contextData)
     {
-        var hindstate = { SPAREtargetID:    targetID,
-                          SPAREcontextData: contextData,                // MUST be serializable!
-                          SPAREstartTitle:  initialTitle,
-                          SPAREstartURL:    initialURL
+        allChanges.preAdd(targetID);
+        let hindstate = { SPAREcontextData:     contextData,            // MUST be serializable!
+                          SPAREinitialTitle:    initialTitle,
+                          SPAREinitialURL:      initialURL
                           // add scroll position, to be used optionally?  (Chrome might benefit, Firefox is doing fine on its own)
                         };
         if (history.state)
@@ -341,18 +396,17 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
 
     // This especially doesn't want to be a true class... BUT WAIT, could lambda methods handle this correctly as callbacks??
     // Returns an object containing functions for different event types 
-    function makeEventFirer(simulateDCL, contextData, poppingState)
+    // XXX TODO: turn into a class with lambda methods:  loaded = result => { ... }; ?
+    function makeEventFirer(simulateDCL, contentURL, contextData)
     {
-        let lastError = undefined;
-
         function makeEvent(name, canCancel)
         {
             let event = new Event(name, { bubbles: true, cancelable: !!canCancel });
             event.contextData = contextData;
-            if (poppingState)
-                event.state = poppingState;
+            event.contentURL = contentURL;
+            event.isSPARE = true;
             if (canCancel)
-                event.cancel = () => { this.preventDefault(); this.stopPropagation(); };
+                event.cancel = function () { this.preventDefault(); this.stopPropagation(); };
             return event;
         }
 
@@ -361,28 +415,32 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                  {
                     let event = makeEvent(simulateDCL ? "DOMContentLoaded" : "SPAREContentLoaded");
                     document.dispatchEvent(event);
-                    lastError = undefined;
-                    // XXX TODO: include a field with the id(s) of victim(s) that got updated
+                    // XXX TODO: include a field with the id(s) of victim(s) that got updated?
                     return val;
                  },
+
                  failed: function (error)
                  {
                     let event = makeEvent("SPAREPopStateFailed");
-                    event.reason = lastError = error;
+                    event.error = error;
                     document.dispatchEvent(event);
                     // subsequent then() will receive undefined; no error is thrown to trigger catch()
                  },
-                 beforePop: function ()
+
+                 beforePop: function (changes)
                  {
                     let event = makeEvent("SPAREBeforePopState", true);
+                    event.changes = changes;        // either an array of Change objects, or a string error condition
                     document.dispatchEvent(event);
                     return !event.defaultPrevented;
                  },
-                 afterPop: function (count)
+
+                 afterPop: function (successes, failures, changesWithOutcomes)
                  {
                     let event = makeEvent("SPAREAfterPopState");
-                    event.replacementsMade = count;
-                    event.error = lastError;
+                    event.replaced = successes;
+                    event.failed = failures;
+                    event.changes = changesWithOutcomes;
                     document.dispatchEvent(event);
                  }
                };
@@ -520,7 +578,26 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
     {
         // global defaulting values settable by the caller
         timeout: undefined,
+
         simulateDCL: false,
+
+        get logErrorsToConsole()
+        {
+            return logToConsole;
+        },
+        set logErrorsToConsole(flag)
+        {
+            logToConsole = !!flag;
+        },
+
+        get treatURLsAsCaseInsensitive()
+        {
+            return urlsCaseInsensitive;
+        },
+        set treatURLsAsCaseInsensitive(flag)
+        {
+            urlsCaseInsensitive = !!flag;
+        },
 
 
         // Our core method - see https://github.com/paulkienitz/SPARE/blob/master/README.md for how to use.
@@ -545,13 +622,14 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
 
         // Like replaceContent but also sets history and title.  Root-relative URLs are recommended,
         // because cross-domain contentURL values will generally fail due to browser security.
-        // Both contextData and postData must be serializable into a popState context.
-        // THIS MEANS that postData MUST NOT be a FormData!  (Can we detect nonserializable values?)
+        // Both contextData and postData must be cloneable into a popState context.  This is validated.
         simulateNavigation(target, contentURL, contentElementID, newTitle, pretendURL, timeout, postData, contextData)
         {
             try
             {
-                let victim = validate(target, contentURL);     // throws (which Promise turns into rejection) if no victim
+                if (postData instanceof URLSearchParams)
+                    postData = postData.toString();     // make it cloneable
+                let victim = validate(target, contentURL, true, postData, contextData);     // throws if any are bad
                 // we polymorphically allow an options param in place of newTitle:  // or pretendURL
                 let op = arguments[arguments.length - 1];
                 if (arguments.length /* >= 4 && arguments.length <= 5 */ === 4 && typeof op === "object")
@@ -564,16 +642,8 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                     contextData = op.contextData;
                 }
                 timeout = normalizeTimeout(timeout, SPARE.timeout);
-                if (postData instanceof URLSearchParams)
-                    postData = postData.toString();     // make it cloneable
-                if (postData)
-                    try { structuredClone(postData); }
-                    catch (ex) { throw makeError("SPARE postData (" + typeName(postData), contentURL, -5) + ") is not storeable in history"; }
-                if (contextData)
-                    try { structuredClone(contextData); }
-                    catch (ex) { throw makeError("SPARE contextData (" + typeName(contextData), contentURL, -5) + ") is not storeable in history"; }
 
-                let eventFirer = makeEventFirer(SPARE.simulateDCL, contextData);
+                let eventFirer = makeEventFirer(SPARE.simulateDCL, contentURL, contextData);
                 let historyAdder = makeHistoryAdder(victim.id, contentURL, contentElementID, newTitle, pretendURL, contextData, postData);
                 historyBackfill(victim.id, contextData);
                 return Retrieve(contentURL, postData, timeout)
@@ -592,75 +662,79 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
         onPopStateRestore(event)
         {
             let retval = undefined;
-            if (event.state && "SPAREtargetID" in event.state)
+            if (event.state && event.state.SPAREinitialURL)
             {
-                let eventFirer = makeEventFirer(SPARE.simulateDCL, event.state.SPAREcontextData, event.state);
-                if (eventFirer.beforePop())
-                {
-                    let victim = document.getElementById(event.state.SPAREtargetID);
-                    if (!victim)        // should not happen... XXX are there any other sanity checks we can do here?
-                    {
-                        console.log("=== SPARE had to reload initial page because history state target is missing." +
-                                    "\nVisible URL:  " + event.state.SPAREvisibleURL + "\nInitial URL:  " + event.state.SPAREstartURL +
-                                    "\nCurrent URL:  " + location.href + "\n- Target ID:  " + event.state.SPAREtargetID);
-                        location.replace(event.state.SPAREvisibleURL);
-                        retval = false;
-                        eventFirer.afterPop(-1);        // -1 means it's moot because the page is about to be reloaded
-                    }
-                    else                                // undo or redo simulated navigations
-                    {
-                        let replacedCount = 0;
+                let eventFirer = makeEventFirer(SPARE.simulateDCL, undefined, event.state.SPAREcontextData);
+////                if (eventFirer.beforePop())
+////                {
+//                    let victim = document.getElementById(event.state.SPAREtargetID);
+//                    if (!victim)        // should not happen... XXX are there any other sanity checks we can do here?
+//                    {
+//                        if (eventFirer.beforePop("SPARE target missing"))
+//                        {
+//                            console.log("=== SPARE had to reload initial page because history state target is missing." +
+//                                        "\nVisible URL:  " + event.state.SPAREvisibleURL + "\nInitial URL:  " + event.state.SPAREinitialURL +
+//                                        "\nCurrent URL:  " + location.href + "\n- Target ID:  " + event.state.SPAREtargetID);
+//                            location.replace(event.state.SPAREvisibleURL);
+//                            retval = false;
+//                            eventFirer.afterPop(-1);    // -1 means it's moot because the page is about to be reloaded
+//                        }
+//                        else
+//                            eventFirer.afterPop(0);
+//                    }
+//                    else                                // undo or redo simulated navigations
+//                    {
+                        // be aware that event.SPAREinitialURL might not match our actual initialURL if a reload has occurred...
+                        // so far this seems to work fine in such cases, but watch out for gotchas
                         let toUpdate = allChanges.needToRestore(event.state.SPAREchanges);
-    //alert(toUpdate.map(SetOfChanges.toString).join('\n') || "no updates needed?");
-                        let promises = toUpdate.map((u) => Retrieve(u.contentURL || event.state.SPAREstartURL, u.postData, SPARE.timeout));
-                        /* var hashfinder = new HashFinder(location.href); */
-                        // those downloads happen in parallel but the extractions must be done in order
-                        retval = Promise.all(promises).then((texts) =>
+//alert(toUpdate.map(toUpdate.toString).join('\n') || "no updates needed?");
+                        if (eventFirer.beforePop(toUpdate))
                         {
-                            for (let i in toUpdate)
+                            let replacedCount = 0, failedCount = 0;
+                            toUpdate.forEach(u => u.outcome = "pending");
+                            let promises = toUpdate.map((u) =>
                             {
-                                let victim = document.getElementById(toUpdate[i].targetID);
-                                makeExtractor(victim, toUpdate[i].contentURL || event.state.SPAREstartURL, toUpdate[i].contentElementID)(texts[i]);
-                                allChanges.set(toUpdate[i]);
-                                replacedCount++;        // if extractor errors out, the loop exits immediately
-                            }
-                        })/*.then(hashfinder.find)*/
-                          .then(eventFirer.loaded, eventFirer.failed)
-                          .then(() => eventFirer.afterPop(replacedCount));
-                    }
-                }
-                else
-                    eventFirer.afterPop(0);
+                                let p = Retrieve(u.contentURL, u.postData, SPARE.timeout);  // XXX ** HOW BETTER HANDLE A TIMEOUT HERE??
+                                u.outcome = "requested";
+                                p.then(t => u.outcome = t.length ? "retrieved" : "empty");  // branch, don't return this
+                                return p.catch(reason => u.error = reason);
+                            });
+                            /* var hashfinder = makeHashFinder(location.href); */
+                            retval = Promise.all(promises).then(texts =>
+                            {
+                                // those fetches happened in parallel but the extractions must be done in order
+                                for (let i in toUpdate)
+                                    if (toUpdate[i] /*Before handler can delete elements*/ && !("error" in toUpdate[i]))
+                                        try
+                                        {
+                                            let victim = document.getElementById(toUpdate[i].targetID);
+                                            let extract = makeExtractor(victim, toUpdate[i].contentURL, toUpdate[i].contentElementID);
+                                            extract(texts[i]);
+                                            allChanges.add(toUpdate[i]);
+                                            toUpdate[i].outcome = "updated";
+                                            replacedCount++;
+                                        }
+                                        catch (e)
+                                        {
+                                            toUpdate[i].error = e;
+                                        }
+                                let airs = toUpdate.filter(u => "error" in u && !!u.error);
+                                if ((failedCount = airs.length))
+                                    throw airs[0];
+                            }).then(eventFirer.loaded, eventFirer.failed)/*.then(hashfinder)*/
+                              .then(() => eventFirer.afterPop(replacedCount, failedCount, toUpdate));
+                        }
+                        else
+                        {
+                            toUpdate.forEach(u => u.outcome = "cancelled");
+                            retval = new Promise((res, rej) => res(eventFirer.afterPop(0, 0, toUpdate));
+                        }
+//                    }
+////                }
+////                else
+////                    eventFirer.afterPop(0);
             }
             return retval;
-        },
-
-
-//        popDestination: function (event)
-//        {
-//            return typeof event === "object" && typeof event.state === "object"
-//                   ? HistoryAdder.destination(event.state) : undefined;
-//            // redundant?  assert that at SPAREContentLoaded time, this return value equals location.href?
-//        },
-
-
-        get logErrorsToConsole()
-        {
-            return logToConsole;
-        },
-        set logErrorsToConsole(flag)
-        {
-            logToConsole = !!flag;
-        },
-
-
-        get treatURLsAsCaseInsensitive()
-        {
-            return urlsCaseInsensitive;
-        },
-        set treatURLsAsCaseInsensitive(flag)
-        {
-            urlsCaseInsensitive = !!flag;
         }
     };
 

@@ -6,7 +6,8 @@
 // What does Chrome do differently?  it sends if-modified-since and if-none-match headers, absent in firefox.
 // .........Wait, has Firefox now fixed itself so the bug doesn't happen anymore?
 
-// TODO: try out unhandledrejection event for a way to have pop failure do a reload.
+// TODO: set a SPARELoading CSS class on the target during the transition.
+//       try out unhandledrejection event for a way to have pop failure do a reload.
 //       send a beforePopState event, and check it for cancellation?
 //       TEST multi-target popstate support.  SET UP TESTS WITH NESTING.
 //           ...See G spreadsheet.  Run through cases, see what more is needed besides de-currenting inners.
@@ -49,7 +50,7 @@ are permitted provided that the following conditions are met:
 // like top-level await while hardly losing any users, but I will use only ES6 syntax here,
 // so that it will be guaranteed to run if it can load.
 
-// (This "single" version is the one that seems to fully replace SPARE 4 without adding any
+// (This "single" version is the one that seeks to fully replace SPARE 4 without adding any
 // new functionality for multi-target back button support.  It moves forward from the stable
 // versions tested in Rockets of Today, incorporating parts of future multi-target support.)
 
@@ -84,7 +85,7 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
         if (name === "object")
             if (anything === null)
                 name = "null";
-            else if ("constructor" in anything && anything.constructor)
+            else if (anything.constructor)
                 name = anything.constructor.name;
         return name;
     }
@@ -116,17 +117,27 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
     }
 
 
-    function validate(target, contentURL)                   // returns target DOM element if it doesn't throw
+    function validate(target, contentURL, checkID, postData, contextData)   // returns target DOM element if it doesn't throw
     {
         if (!contentURL || typeof contentURL !== "string")      // allow URL object?
             throw makeError("SPARE - contentURL string is required", contentURL);
         if (target instanceof HTMLElement)
+        {
+            if (checkID && !target.id)
+                throw makeError("SPARE - target has no ID", contentURL);
             return target;
+        }
         if (!target)
             throw makeError("SPARE - target ID or object is required", contentURL);
         let victim = document.getElementById(target);
         if (!victim)
             throw makeError(`SPARE could not find target element '${target}' in ${contentURL}`, contentURL);
+        if (postData)
+            try { structuredClone(postData); }
+            catch (ex) { throw makeError("SPARE postData is not cloneable - type " + typeName(postData), contentURL); }
+        if (contextData)
+            try { structuredClone(contextData); }
+            catch (ex) { throw makeError("SPARE contextData is not cloneable - type " + typeName(contextData), contentURL); }
         return victim;
     }
 
@@ -142,12 +153,6 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
     }
 
 
-    function replaceContentImpl(victim, contentURL, contentElementID, timeout, postData)
-    {
-        return Retrieve(contentURL, postData, timeout).then(makeExtractor(victim, contentURL, contentElementID));
-    }
-
-
 
     // private internal classes and classlike features (sometimes just a factory or plain function)
 
@@ -158,14 +163,14 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
         return function (val)
         {
             let state = { SPAREtargetID:         targetID,
-                          SPAREcontentURL:       contentURL,
-                          SPAREcontentElementID: contentElementID,
                           SPAREnewTitle:         newTitle,
                           SPAREvisibleURL:       pretendURL || contentURL,
+                          SPAREcontentURL:       contentURL,
+                          SPAREcontentElementID: contentElementID,
                           SPAREpostData:         postData,              // MUST be serializable! and serialization is stricter than you think
-                          SPAREcontextData:      contextData,           // MUST be serializable!
-                          SPAREstartTitle:       initialTitle,
-                          SPAREstartURL:         initialURL
+                          SPAREcontextData:      contextData,           // MUST be serializable, like postData!
+                          SPAREinitialTitle:     initialTitle,
+                          SPAREinitialURL:       initialURL
                           // add scroll position, to be used optionally?  (Chrome might benefit, Firefox is doing fine on its own)
                         };
             history.pushState(state, "", pretendURL || contentURL);
@@ -177,10 +182,10 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
 
     function historyBackfill(targetID, contextData)
     {
-        var hindstate = { SPAREtargetID:    targetID,
-                          SPAREcontextData: contextData,                // MUST be serializable!
-                          SPAREstartTitle:  initialTitle,
-                          SPAREstartURL:    initialURL
+        let hindstate = { SPAREtargetID:        targetID,
+                          SPAREcontextData:     contextData,            // MUST be serializable!
+                          SPAREinitialTitle:    initialTitle,
+                          SPAREinitialURL:      initialURL
                           // add scroll position, to be used optionally?  (Chrome might benefit, Firefox is doing fine on its own)
                         };
         if (history.state)
@@ -221,7 +226,8 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
 
     // This especially doesn't want to be a true class... BUT WAIT, could lambda methods handle this correctly as callbacks??
     // Returns an object containing functions for different event types 
-    function makeEventFirer(simulateDCL, contextData, poppingState)
+    // XXX TODO: turn into a class with lambda methods:  loaded = result => { ... }; ?
+    function makeEventFirer(simulateDCL, contentURL, contextData)
     {
         let lastError = undefined;
 
@@ -229,10 +235,10 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
         {
             let event = new Event(name, { bubbles: true, cancelable: !!canCancel });
             event.contextData = contextData;
-            if (poppingState)
-                event.state = poppingState;
+            event.contentURL = contentURL;
+            event.isSPARE = true;
             if (canCancel)
-                event.cancel = () => { this.preventDefault(); this.stopPropagation(); };
+                event.cancel = function () { this.preventDefault(); this.stopPropagation(); };
             return event;
         }
 
@@ -241,27 +247,30 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                  {
                     let event = makeEvent(simulateDCL ? "DOMContentLoaded" : "SPAREContentLoaded");
                     document.dispatchEvent(event);
+                    // XXX TODO: include a field with the id(s) of victim(s) that got updated?
                     lastError = undefined;
-                    // XXX TODO: include a field with the id(s) of victim(s) that got updated
                     return val;
                  },
+
                  failed: function (error)
                  {
                     let event = makeEvent("SPAREPopStateFailed");
-                    event.reason = lastError = error;
+                    event.error = lastError = error;
                     document.dispatchEvent(event);
                     // subsequent then() will receive undefined; no error is thrown to trigger catch()
                  },
+
                  beforePop: function ()
                  {
                     let event = makeEvent("SPAREBeforePopState", true);
                     document.dispatchEvent(event);
                     return !event.defaultPrevented;
                  },
-                 afterPop: function (count)
+
+                 afterPop: function (outcome)
                  {
                     let event = makeEvent("SPAREAfterPopState");
-                    event.replacementsMade = count;
+                    event.outcome = outcome;
                     event.error = lastError;
                     document.dispatchEvent(event);
                  }
@@ -400,7 +409,26 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
     {
         // global defaulting values settable by the caller
         timeout: undefined,
+
         simulateDCL: false,
+
+        get logErrorsToConsole()
+        {
+            return logToConsole;
+        },
+        set logErrorsToConsole(flag)
+        {
+            logToConsole = !!flag;
+        },
+
+        get treatURLsAsCaseInsensitive()
+        {
+            return urlsCaseInsensitive;
+        },
+        set treatURLsAsCaseInsensitive(flag)
+        {
+            urlsCaseInsensitive = !!flag;
+        },
 
 
         // Our core method - see https://github.com/paulkienitz/SPARE/blob/master/README.md for how to use.
@@ -425,13 +453,14 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
 
         // Like replaceContent but also sets history and title.  Root-relative URLs are recommended,
         // because cross-domain contentURL values will generally fail due to browser security.
-        // Both contextData and postData must be serializable into a popState context.
-        // THIS MEANS that postData MUST NOT be a FormData!  (Can we detect nonserializable values?)
+        // Both contextData and postData must be cloneable into a popState context.  This is validated.
         simulateNavigation(target, contentURL, contentElementID, newTitle, pretendURL, timeout, postData, contextData)
         {
             try
             {
-                let victim = validate(target, contentURL);     // throws (which Promise turns into rejection) if no victim
+                if (postData instanceof URLSearchParams)
+                    postData = postData.toString();     // make it cloneable
+                let victim = validate(target, contentURL, true, postData, contextData);     // throws if any are bad
                 // we polymorphically allow an options param in place of newTitle:  // or pretendURL
                 let op = arguments[arguments.length - 1];
                 if (arguments.length /* >= 4 && arguments.length <= 5 */ === 4 && typeof op === "object")
@@ -444,16 +473,8 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                     contextData = op.contextData;
                 }
                 timeout = normalizeTimeout(timeout, SPARE.timeout);
-                if (postData instanceof URLSearchParams)
-                    postData = postData.toString();     // make it serializable
-                if (postData)
-                    try { structuredClone(postData); }
-                    catch (ex) { throw makeError("SPARE postData (" + typeName(postData), contentURL, -5) + ") is not storeable in history"; }
-                if (contextData)
-                    try { structuredClone(contextData); }
-                    catch (ex) { throw makeError("SPARE contextData (" + typeName(contextData), contentURL, -5) + ") is not storeable in history"; }
 
-                let eventFirer = makeEventFirer(SPARE.simulateDCL, contextData);
+                let eventFirer = makeEventFirer(SPARE.simulateDCL, contentURL, contextData);
                 let historyAdder = makeHistoryAdder(victim.id, contentURL, contentElementID, newTitle, pretendURL, contextData, postData);
                 historyBackfill(victim.id, contextData);
                 return Retrieve(contentURL, postData, timeout)
@@ -471,23 +492,21 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
         // our handler for the popstate event, already attached
         onPopStateRestore(event)
         {
-            let url, id, postage, victim, eventFirer, retval;
-            if (event.state && "SPAREtargetID" in event.state)
+            let url, id, postage, victim, eventFirer, outcome, retval;
+            if (event.state && event.state.SPAREinitialURL)
             {
-                victim = document.getElementById(event.state.targetID);
-                eventFirer = makeEventFirer(SPARE.simulateDCL, event.state.SPAREcontextData, event.state);
-                let replaced = false;
+                victim = document.getElementById(event.state.SPAREtargetID);
+                eventFirer = makeEventFirer(SPARE.simulateDCL, event.state.SPAREcontentURL, event.state.SPAREcontextData);
                 if (eventFirer.beforePop())
                 {
                     if (!victim)        // should not happen... XXX are there any other sanity checks we can do here?
                     {
-                        console.log("=== SPARE had to reload initial page because history state target is missing." +
-                                    "\nVisible URL:  " + event.state.SPAREvisibleURL + "\nInitial URL:  " + event.state.SPAREstartURL +
-                                    "\nCurrent URL:  " + location.href + "\n- Target ID:  " + event.state.SPAREtargetID);
+                        console.log(`=== SPARE has to reload initial page because history state target '${event.state.SPAREtargetID}' is missing.` +
+                                    `\nVisible URL:  ${event.state.SPAREvisibleURL}\nCurrent URL:  ${location.href}\nInitial URL:  ${event.state.SPAREinitialURL}`);
                         location.replace(event.state.SPAREvisibleURL);
                         retval = false;
                     }
-                    else if ("SPAREcontentURL" in event.state)      // we are recreating a simulated non-original page state
+                    else if (event.state.SPAREcontentURL)           // we are recreating a simulated non-original page state
                     {
                         url = event.state.SPAREcontentURL;
                         id = event.state.SPAREcontentElementID;
@@ -496,42 +515,28 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                     }
                     else                                            // we are returning to a page state as originally loaded
                     {
-                        url = event.state.SPAREstartURL;
+                        url = event.state.SPAREinitialURL;
                         id = event.state.SPAREtargetID;
-                        document.title = event.state.SPAREstartTitle;
+                        document.title = event.state.SPAREinitialTitle;
                     }
-                    /* var hashfinder = new HashFinder(location.href); */
+                    /* var hashfinder = makeHashFinder(location.href); */
                     if (url)
-                        retval = replaceContentImpl(victim, url, id, postage, SPARE.timeout)    // XXX ** HOW BETTER HANDLE A TIMEOUT HERE??
-                                       /*.then(hashfinder.find)*/
-                                       .then((val) => { replaced = true; return val; })
-                                       .then(eventFirer.loaded, eventFirer.failed);
+                    {
+                        outcome = "pending";
+                        let p = Retrieve(url, postage, SPARE.timeout);      // XXX ** HOW BETTER HANDLE A TIMEOUT HERE??
+                        outcome = "requested";
+                        p.then(t => outcome = "retrieved");
+                        let extract = makeExtractor(victim, event.state.SPAREcontentURL, event.state.SPAREcontentElementID);
+                        p = p.then(extract);
+                        p.then(v => outcome = "replaced");
+                        retval = p.then(eventFirer.loaded, eventFirer.failed)/*.then(hashfinder)*/
+                                  .then(v => eventFirer.afterPop(outcome));
+                    } // else afterPop does not fire because page is reloading
                 }
-                eventFirer.afterPop(replaced);
+                else
+                    retval = new Promise((res, rej) => res(eventFirer.afterPop("cancelled"));
             }
             return retval;
-        },
-
-
-
-
-        get logErrorsToConsole()
-        {
-            return logToConsole;
-        },
-        set logErrorsToConsole(flag)
-        {
-            logToConsole = !!flag,
-        },
-
-
-        get treatURLsAsCaseInsensitive()
-        {
-            return urlsCaseInsensitive;
-        },
-        set treatURLsAsCaseInsensitive(flag)
-        {
-            urlsCaseInsensitive = !!flag,
         }
     };
 
