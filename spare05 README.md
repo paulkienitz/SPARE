@@ -103,7 +103,15 @@ We also support passing `URLSearchParams` or `FormData` objects to encapsulate y
 `FormData` can even support file uploads.
 (Passing in `ReadableStream`, `BufferSource`, or `Blob` objects is untested.)
 
-> **`timeout`**: a number.If the new data doesn’t download within this many seconds, the operation fails.The supported range is from 0 to 3600, and the default is to leave it up to the browser.Fractional values such as 1.25 are supported.You can set a different default globally by putting a number in the global variable **`SPARE.timeout`**.If the time expires, the returned promise will be rejected with a `SPAREError` object, extended with an `httpStatus` property set to 408 (Request Timeout), and `httpMessage` set to "SPARE time limit exceeded (_ seconds)" instead of "Request Timeout".(All internal error messages start with the word "SPARE".)*Note* that setting a large value does not prevent the browser or host from failing the operation sooner.
+> **`timeout`**: a number.
+If the new data doesn’t download within this many seconds, the operation fails.
+The supported range is from 0 to 3600, and the default is to leave it up to the browser.
+Fractional values such as 1.25 are supported.
+You can set a different default globally by putting a number in the global variable **`SPARE.timeout`**.
+If the time expires, the returned promise will be rejected with a `SPAREError` object, extended with an `httpStatus` property set to 408 (Request Timeout), and `httpMessage` set to "SPARE time limit exceeded (_ seconds)" instead of "Request Timeout".
+(All internal error messages start with the word "SPARE".)
+*Note* that setting a large value does not prevent the browser or host from failing the operation sooner.
+
 The later parameters are optional, and it is common to call `replaceContent` with only three parameters (or even just two), as most users don’t need to specify a timeout or send a post request.
 
 You can set a timeout for all calls by assigning a value to the `SPARE.timeout` property instead of passing it as a parameter.
@@ -187,7 +195,8 @@ The full list of parameters is:
 > **`postData`**: content to be sent via a POST request.
 
 > **`timeout`**: the number of seconds to wait for the download of new content.
-> **`contextData`**: any value you want to pass — it will be included in the info transmitted to events associated with this navigation.
+
+> **`contextData`**: any value you want to pass — it will be included in the info transmitted to events associated with this navigation.
 
 Note that if you supply a `postData` argument, *it must be a value that can be cloned*, or it will fail.
 Exactly what values are permitted may vary, but the safest option is to pass only strings or `URLSearchParams` objects (which get converted into strings).
