@@ -2,7 +2,7 @@
 
 ### Release 5 — ?????? Septober 43, 202∞
 
-**This is a major breaking change, no longer compatible with previous releases.  Every method is different now, so read the new documentation.**
+***This is a major breaking change, no longer compatible with previous releases.  Every method is different now, so read the new documentation.***
 
 1. SPARE is now a JavaScript module rather than a traditional script, so you reference it with a statement such as `import {SPARE} from "spare05.js";` rather than with a `<script>` tag.  This means that outdated browsers such as Internet Explorer cannot load it at all.  If you want to support old browsers, you cannot upgrade from SPARE 4.
 
@@ -14,7 +14,7 @@
 
 5. `simulateNavigation` is now polymorphic in that the fourth parameter can be an ad-hoc options object whose properties specify any or all of the parameters `newTitle`, `pretendURL`, `postData`, `timeout`, and `contextData`.  (The polymorphism of `replaceContent` is now reduced to only the ability to put `timeout` in place of `postData`.)
 
-6. You no longer attach `onPopStateRestore` to the popstate event youself; it’s done for you.  Supplying your own handler, or wrapping the provided one, is now discouraged.  To extend or override it, SPARE emits new events `SPAREBeforePopState` and `SPAREAfterPopState` which you can add handlers for.  The former can be used to cancel the built-in popstate handling.
+6. You no longer attach `onPopStateRestore` to the popstate event youself; it’s done for you.  Supplying your own handler, or wrapping the provided one, is now discouraged.  To extend or override it, SPARE emits new events `SPAREBeforePopState` and `SPAREAfterPopState` which you can add handlers for.  The former can be used to cancel or modify the built-in popstate handling.
 
 7. Back button handling in `onPopStateRestore` is now much more sophisticated and handles a lot more cases.  It keeps track of when small updates have been discarded inside of larger ones, or need the larger one to be restored first, and cases where many areas are updated independently.  SPARE 4 didn’t really support any of these scenarios.  **Note** that this depends on recognizing matching content URLs, so if there’s a possibility that you might give the same URL with different uppercase and lowercase letters, you should set the property `SPARE.treatURLsAsCaseInsensitive` to `true`.
 
