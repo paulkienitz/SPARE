@@ -23,7 +23,7 @@ SPARE is most seamlessly used when you have a site design where many pages share
 SPARE lets you load new content into that area without refreshing the rest of the page.
 In this use case, often the two IDs will be the same.
 
-In that type of usage, you can ask SPARE to fully simulate navigation as if the pages were being loaded normally instead of partially.
+In that type of usage, you can ask SPARE to fully simulate navigation as if the pages were being loaded normally instead of partially, so the Back button works as expected.
 This mode is used by invoking a different method.
 
 You can just as easily select content from pages not resembling the calling page.
@@ -107,14 +107,13 @@ We also support passing `URLSearchParams` or `FormData` objects to encapsulate y
 If the new data doesn’t download within this many seconds, the operation fails.
 The supported range is from 0 to 3600, and the default is to leave it up to the browser.
 Fractional values such as 1.25 are supported.
-You can set a different default globally by putting a number in the global variable **`SPARE.timeout`**.
 If the time expires, the returned promise will be rejected with a `SPAREError` object, extended with an `httpStatus` property set to 408 (Request Timeout), and `httpMessage` set to "SPARE time limit exceeded (_ seconds)" instead of "Request Timeout".
 (All internal error messages start with the word "SPARE".)
 *Note* that setting a large value does not prevent the browser or host from failing the operation sooner.
 
 The later parameters are optional, and it is common to call `replaceContent` with only three parameters (or even just two), as most users don’t need to specify a timeout or send a post request.
 
-You can set a timeout for all calls by assigning a value to the `SPARE.timeout` property instead of passing it as a parameter.
+You can set a default timeout for all calls by assigning a value to the **`SPARE.timeout`** property instead of passing it as a parameter.
 That’s one of several exposed properties you can set — the other are described in a later section.
 If the parameter is passed, it overrides the property.
 
@@ -137,7 +136,7 @@ If the operation fails, the promise will be rejected with the reason being some 
 > `httpStatus` will, for errors returned by the web host, be the number of the HTTP result code, such as 404 for Not Found.
 Negative values are used for errors occurring after a successful download.
 A value of -1 is used when the downloaded content does not contain `contentElementID`.
-Other negative values are used for unexpected failures during the page update, which normally you should never encounter.
+Other negative values are used for unexpected exceptions, which normally you should never encounter: -2 or -4 if it occurred during content retrieval, or -3 if during the page update.
 
 > `httpMessage` will, in the case of host errors, be set to the brief standard message accompanying an HTTP error, such as “Not Found”, if any was sent.
 If the server is using HTTP 2 and sent no message, SPARE may substitute a generic message such as "HTTP status ###", where ### is the httpStatus number.
@@ -174,7 +173,7 @@ If not, the Back button may not be able to work correctly, among other issues.
 The Back button will also misbehave if you perform `simulateNavigation` at page load time.
 Avoid doing this — stick to `replaceContent` until it’s time to respond to a user action.
 Adding extra stuff to the Back button history when the user didn’t take any navigating action is not just poor design, it’s an abuse.
-And if you have multiple updates to do in one action, use `simulatrNavigation` for only one of them.
+And if you have multiple updates to do in one action, use `simulateNavigation` for only one of them.
 
 *Note* that due to browser security, navigation between different domains generally will not work with `simulateNavigation`; all pages must be within a single website, unless you configure Cross-Origin Resource Sharing (CORS) in the headers sent by your server.
 
@@ -202,7 +201,7 @@ Note that if you supply a `postData` argument, *it must be a value that can be c
 Exactly what values are permitted may vary, but the safest option is to pass only strings or `URLSearchParams` objects (which get converted into strings).
 `FormData` does seem to generally work, but no guarantees there.
 And `contextData` is subject to the same restriction.
-If either is not usable, `simulateNavigation` will immediately return a rejected promise with a validation error.
+If either is clearly not usable, `simulateNavigation` will immediately return a rejected promise with a validation error, but there is no guarantee that it can catch all problematic cases.
 
 Also note that the target element *must have an ID*.
 `replaceContent` can be passed an `Element` object representing an ID-less HTML tag, but `simulateNavigation` cannot support the Back button in such a case.
@@ -227,7 +226,7 @@ One gotcha to be aware of with `simulateNavigation` is that pretend URLs saved i
 Unless all pages and pretend URLs are in the same directory, it’s safer to always use root-relative or absolute URLs throughout any pages that use SPARE.
 I recommend root-relative URLs, because browser security does not normally permit us to simulate navigation to any other domains.
 
-SPARE sets up a `popstate` event handler, which is described in the next section.
+SPARE sets up a `popstate` event handler.
 Without this, when the user clicks the Back button after simulated navigation, the page content would not change.
 In SPARE 4 and earlier, you had to attach the `popstate` handler yourself, but it’s now automatic.
 The handler, `SPARE.onPopStateRestore`, is described in the next section.
@@ -244,7 +243,7 @@ You can simply ignore that event, and it will have no effect.
 If you are interested in responding to it, you can attach a handler function with `window.addEventListener('SPAREContentLoaded', mySpareContentLoadedHandler);`.
 The `Event` object passed to your handler has three added properties which are not present for a `DOMContentLoaded` event after normal navigation: the `contentURL` you used, the `contextData` value that you passed in, and a flag named `isSPARE` which is set true.
 These are also present in simulated `DOMContentLoaded` events — real ones carry no added properties, so other handlers will not be affected by the addition.
-You can tell simulated from real with `"isSPARE" in event`.
+You can tell simulated from real with `event.isSPARE`, which is `undefined` for nonsimulated events.
 
 --------
 
@@ -286,31 +285,43 @@ The before and after events carry more detail than the content-loaded event.
 The full set of event properties for all four events are:
 
 > **`isSPARE`**: always true.
+
 > **`contentURL`**: when handling a `popstate` event, this is set to `undefined`, as multiple URLs may be used.
 (This is how you can tell whether a `SPAREContentLoaded` event came from `simulateNavigation` or `onPopStateRestore`.)
+
 > **`contextData`**: the value that was passed to the `simulateNavigation` call whose effect this pop is trying to restore.
+
 > **`error`**: present only for `SPAREPopStateFailed`, it has a copy of whatever error object was thrown by a failed update, or the first such if there was more than one.
 (If an error occurs, it is deferred until all other updates have completed or failed, to minimize the impact on the page.)
+
 > **`replaced`**: present only for `SPAREAfterPopState`, it is the count of how many elements were successfully replaced.
+
 > **`failed`**: present only for `SPAREAfterPopState`, it is the count of how many elements failed to be replaced.
+
 > **`changes`**: present for `SPAREBeforePopState` and `SPAREAfterPopState`, this is an array of objects which each describes a single element that will be, or has been, updated.
 
 The `changes` array contains `Change` objects, which have these fields:
 
 > **`targetID`**: the ID that identifies the target element of the change.
+
 > **`contentURL`**: the URL from which new content is loaded into the target.
+
 > **`contentElementID`**: the ID identifying the source element within the loaded content.
+
 > **`postData`**: any `postData` value which is used in obtaining the content, if given.
-(If the original `postData` value given was a `URLSearchParams` object, it is converted to a string before being stored.)
+(If the original `postData` value given was a `URLSearchParams` object, it is stored here as a string.)
+
 > **`containedBy`**: when one `Change` affects an element which is inside another element that was also modified, this is the ID identifying that outer element.
 The `containedBy` of one `Change` will equal the `targetID` of another.
 If they are nested deeper than two layers, these links can be followed successively from innermost to outermost.
 If there is no containing `Change`, this is `null`.
+
 > **`error`**: present only for `SPAREAfterPopState`, and only if the update failed, this is the object that was thrown as the reason for the failure.
+
 > **`outcome`**: present only for `SPAREAfterPopState`, this tells what happened when the update was carried out.
-As each update proceeds, the `outcome` value progresses from "pending" to "requested" to "retrieved" to "updated".
-If it arrives in the `SPAREAfterPopState` handler with a value other than "updated", it tells you the last step it successfully completed before `error` was set.
-If a contentURL “successfully” returns no content, outcome will be set to "empty" instead of "retrieved"... which may be valid if you did not provide any `contentElementID`, but otherwise will produce an error when it looks for that ID in it.
+As each update proceeds, the `outcome` value progresses from `"pending"` to `"requested"` to `"retrieved"` to `"updated"`.
+If it arrives in the `SPAREAfterPopState` handler with a value other than `"updated"`, it tells you the last step it successfully completed before `error` was set.
+If a contentURL yields apparent success but returns no content, outcome will be set to `"empty"` instead of `"retrieved"`... which may be valid if you did not provide any `contentElementID`, but otherwise will produce an error when it looks for that ID in it.
 The combination of `outcome` and `error` values for every change may allow for more detailed analysis of failures than `SPAREPopStateFailed` supports.
 
 The `Change` objects in the `changes` array are sorted into the order in which they will be performed.
@@ -318,8 +329,8 @@ The content downloads proceed asynchronously in parallel, but the updates to pag
 Of course, the most common case is that the array contains only one `Change`.
 
 Your handler for the `SPAREBeforePopState` event can affect the behavior of `onPopStateRestore`.
-The simplest way to do this is to cancel it: if you call `event.preventDefault()` or `event.cancel()` (a simple wrapper function which invokes `event.stopPropagation()` as well), then `onPopStateRestore` will not attempt any page updates at all.
-It will skip directly to `SPAREAfterPopState`, which will receive an event in which `replaced` and `failed` are both zero, and the `outcome` of every `Change` in the `changes` array is "cancelled".
+The simplest way to do this is to cancel it: if you call `event.preventDefault()` or `event.cancel()` — a simple wrapper function added by SPARE which invokes both that and `event.stopPropagation()` — then `onPopStateRestore` will not attempt any page updates at all.
+It will skip directly to `SPAREAfterPopState`, which will receive an event in which `replaced` and `failed` are both zero, and the `outcome` of every `Change` in the `changes` array is `"cancelled"`.
 If you do this, your event handlers are solely responsible for updating the page content.
 You might do this if, for instance, you detect a situation which calls for a full refresh of the page, or a redirect, or for all content to be replaced with an error message.
 And this handler can do more than that: if you really think you know what you’re doing, *you can modify the `changes` array*.
@@ -330,7 +341,7 @@ But all changes have to be made in-place within the existing array; assigning a 
 Though overriding the automatic handling of the `popstate` event by `onPopStayeRestore` is discouraged, it it still possible.
 If your substitute handler calls `SPARE.onPopStateRestore`, its return value is a `Promise` which will settle after the `SPAREAfterPopState` event is completed.
 You can attach more `then` followups to it.
-But if code other than SPARE is also pushing history states, your handler will respond to those too, and `onPopStayeRestore` will return `undefined`.
+But if code other than SPARE is also pushing history states, your handler will respond to those too, and `onPopStateRestore` will return `undefined`.
 
 For even more stuff that normal usage does not need to mess with, `Change` objects are not present only in the before/after events.
 Your code can also examine the global object `history.state`, and it contains fields that describe how the page has been modified since it was loaded, including an array of `Change` objects.
@@ -341,11 +352,17 @@ Since the `history.state` object can be accessed by other code besides SPARE, al
 The fields it adds in `simulateNavigation` are:
 
 > **`SPAREtargetID`**: the ID of the last element that was updated.
+
 > **`SPAREcontextData`**: whatever context data object you passed to `simulateNavigation` for the last update, if any.
+
 > **`SPAREnewTitle`**: the title of the page as shown by the browser for this window or tab, as given in the `newTitle` parameter of `simulateNavigation`.
+
 > **`SPAREvisibleURL`**: the URL shown in the browser’s address bar, which comes from the `pretendURL` parameter if it was given, or from `contentURL` if it was not.
+
 > **`SPAREinitialTitle`**: the title of the page as it was when it was originally loaded.
+
 > **`SPAREinitialURL`**: the URL that the page was initially loaded from.
+
 > **`SPAREchanges`**: the array of `Change` objects detailing what has been updated since the page was loaded.
 
 Note that the list in `history.state.SPAREchanges` reflects a series of differences between the current page and the page as initially loaded, whereas the `event.changes` that’s passed to a `SPAREBeforePopState` or `SPAREAfterPopState` handler reflects a series of changes for updating one modified page into another.
@@ -379,8 +396,6 @@ The property setter does coerce non-boolean values to be saved as either `false`
 This is used by `onPopStateRestore` when deciding if two `Change` records match each other and therefore don’t need to be redone.
 Some servers do not behave this way and will retrieve resources correctly only if you use the exact letter case, but if your website may be prone to referring to the same page via URLs that may not always agree on letter case, you should set this `true`.
 It is `false` by default, and currently the setter does coerce non-boolean values.
-
-I considered adding a feature where you could set `treatURLsAsCaseInsensitive` to a function which could make it conditional for particular cases, but I am not convinced that there is any need to get that fancy with it.
 
 ------
 
