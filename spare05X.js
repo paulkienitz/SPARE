@@ -7,17 +7,10 @@
 // .........Wait, has Firefox now fixed itself so the bug doesn't happen anymore?
 
 // TODO: set a SPARELoading CSS class on the target during the transition.
-//       try out unhandledrejection event for a way to have pop failure do a reload.
-//       send a beforePopState event, and check it for cancellation?
+//       test out unhandledrejection event for a way to have pop failure do a reload.
+//       have SPAREContentLoaded fire once per update, not consolidated.
 //       TEST multi-target popstate support.  SET UP TESTS WITH NESTING.
 //           ...See G spreadsheet.  Run through cases, see what more is needed besides de-currenting inners.
-//       figure out some way to opt for full reload in major cases.
-//       DEFAULT SPAREPopStateFailed handler to reload page.
-/*   CASES FOR NESTED TARGETS -- check each for back and fwd by steps, and back/fwd all at once:
-A inside older B: 
-A, then newer B outside: 
-...
-*/
 // FUTURE FEATURE TO CONSIDER: optional finer control over restoring scroll position.
 
 
@@ -199,7 +192,7 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
             for (let c of this.saved.values())
             {
                 let itsElement = document.getElementById(c.targetID);
-                if (itsElement ? itsElement.parentElement.closest(idToBeAdded))
+                if (itsElement && itsElement.parentElement.closest(idToBeAdded))
                     this.saved.get(c.targetID).willBeErasedBy = idToBeAdded;
                 // TODO: clean that up if simulateNavigation fails
             }
@@ -216,7 +209,7 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
             let container = target.parentElement.closest(allIDs);
             up.containedBy = container ? container.targetID : null;
             // if this now contains some old changes, those all just got erased, so forget them
-            target.querySelectorAll(allIDs).forEach(el => this.saved.delete(el.id));
+            //target.querySelectorAll(allIDs).forEach(el => this.saved.delete(el.id));
             this.saved.values().filter(c => c.willBeErasedBy === up.targetID)
                                .forEach(d => this.saved.delete(d.targetID));
         }
@@ -352,7 +345,8 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
 
     function historyBackfill(targetID, contextData)
     {
-        allChanges.preAdd(targetID);
+        if (history.state && history.state.SPAREinitialURL)
+            return;
         let hindstate = { SPAREcontextData:     contextData,            // MUST be serializable!
                           SPAREinitialTitle:    initialTitle,
                           SPAREinitialURL:      initialURL
@@ -360,8 +354,6 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                         };
         if (history.state)
         {
-            // If there's an existing state from makeHistoryAdder, merging this into it won't change any values.
-            // If there's an existing state added by somebody else... we just hope they didn't use any SPARE property names.
             var t = history.state;
             Object.assign(t, hindstate);                                // merge the fields
             hindstate = t;
@@ -646,6 +638,7 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                 let eventFirer = makeEventFirer(SPARE.simulateDCL, contentURL, contextData);
                 let historyAdder = makeHistoryAdder(victim.id, contentURL, contentElementID, newTitle, pretendURL, contextData, postData);
                 historyBackfill(victim.id, contextData);
+                allChanges.preAdd(victim.id);
                 return Retrieve(contentURL, postData, timeout)
                             .then(makeExtractor(victim, contentURL, contentElementID))
                             .then(historyAdder)
@@ -727,7 +720,7 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                         else
                         {
                             toUpdate.forEach(u => u.outcome = "cancelled");
-                            retval = new Promise((res, rej) => res(eventFirer.afterPop(0, 0, toUpdate));
+                            retval = new Promise((res, rej) => res(eventFirer.afterPop(0, 0, toUpdate)));
                         }
 //                    }
 ////                }

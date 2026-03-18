@@ -182,6 +182,8 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
 
     function historyBackfill(targetID, contextData)
     {
+        if (history.state && history.state.SPAREinitialURL)
+            return;
         let hindstate = { SPAREtargetID:        targetID,
                           SPAREcontextData:     contextData,            // MUST be serializable!
                           SPAREinitialTitle:    initialTitle,
@@ -190,8 +192,6 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                         };
         if (history.state)
         {
-            // If there's an existing state from makeHistoryAdder, merging this into it won't change any values.
-            // If there's an existing state added by somebody else... we just hope they didn't use any SPARE property names.
             var t = history.state;
             Object.assign(t, hindstate);                                // merge the fields
             hindstate = t;
@@ -526,7 +526,7 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                         let p = Retrieve(url, postage, SPARE.timeout);      // XXX ** HOW BETTER HANDLE A TIMEOUT HERE??
                         outcome = "requested";
                         p.then(t => outcome = "retrieved");
-                        let extract = makeExtractor(victim, event.state.SPAREcontentURL, event.state.SPAREcontentElementID);
+                        let extract = makeExtractor(victim, url, id);
                         p = p.then(extract);
                         p.then(v => outcome = "replaced");
                         retval = p.then(eventFirer.loaded, eventFirer.failed)/*.then(hashfinder)*/
@@ -534,7 +534,7 @@ export var SPARE = function ()	   // IIFE returns the SPARE singleton object, wh
                     } // else afterPop does not fire because page is reloading
                 }
                 else
-                    retval = new Promise((res, rej) => res(eventFirer.afterPop("cancelled"));
+                    retval = new Promise((res, rej) => res(eventFirer.afterPop("cancelled")));
             }
             return retval;
         }
